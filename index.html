@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>SUMEE! - Multi Console Emulator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Frutiger Aero Effects Layer -->
+<div class="aurora"></div>
+<div id="cloudContainer" style="position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden;"></div>
+<div id="bokehContainer" style="position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden;"></div>
+<div id="bubbleContainer" style="position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden;"></div>
+<div id="leafContainer" style="position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden;"></div>
+<div id="waterDropContainer" style="position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden;"></div>
+<div id="lightRayContainer" style="position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden;"></div>
+<div id="lensFlareContainer" style="position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden;"></div>
+<div id="rippleContainer" style="position:fixed;inset:0;z-index:49;pointer-events:none;overflow:hidden;"></div>
+<div class="grass-strip"></div>
+
+<div class="app">
+
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" id="mobileMenuBtn" style="position:fixed;top:14px;left:14px;z-index:300;">&#9776;</button>
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div id="sidebarOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:150;display:none;"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">S</div>
+                <div class="sidebar-logo-text">Sum<span>ee</span></div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Menu</div>
+                <div class="nav-item active" data-view="home">
+                    <span class="nav-icon" style="background:#f1f5f9;">&#127968;</span> Home
+                </div>
+                <div class="nav-item" data-view="library">
+                    <span class="nav-icon" style="background:#f1f5f9;">&#128218;</span> Library
+                    <span class="nav-badge" id="libCount">0</span>
+                </div>
+                <div class="nav-item" data-view="settings">
+                    <span class="nav-icon" style="background:#f1f5f9;">&#9881;</span> Settings
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Consoles</div>
+                <div class="nav-item" data-console="nes">
+                    <span class="nav-icon nes">&#127918;</span> NES
+                </div>
+                <div class="nav-item" data-console="snes">
+                    <span class="nav-icon snes">&#127918;</span> SNES
+                </div>
+                <div class="nav-item" data-console="n64">
+                    <span class="nav-icon n64">&#127922;</span> Nintendo 64
+                </div>
+                <div class="nav-item" data-console="gb">
+                    <span class="nav-icon gb">&#128241;</span> Game Boy
+                </div>
+                <div class="nav-item" data-console="genesis">
+                    <span class="nav-icon gen">&#127918;</span> Genesis
+                </div>
+                <div class="nav-item" data-console="ps1">
+                    <span class="nav-icon ps1">&#127918;</span> PlayStation
+                </div>
+                <div class="nav-item" data-console="psp">
+                    <span class="nav-icon psp">&#128241;</span> PSP
+                </div>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="sidebar-footer-btn" id="btnLoadRom">
+                &#128194; Load ROM
+            </button>
+            <input type="file" id="romFileInput" accept=".nes,.sfc,.smc,.n64,.z64,.v64,.gb,.gbc,.gen,.md,.bin,.psx,.pbp,.elf,.iso,.cso" style="display:none">
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+        <!-- Top Bar -->
+        <div class="topbar">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div>
+                    <div class="topbar-title" id="topbarTitle">Home</div>
+                    <div class="topbar-breadcrumb">Sumee <span>/ <span id="topbarBreadcrumb">Home</span></span></div>
+                </div>
+            </div>
+            <div class="topbar-actions">
+                <button class="topbar-btn" id="btnLoadRom2">&#128194; Load ROM</button>
+                <button class="topbar-btn primary" id="btnStartStop" style="display:none">&#9654; Start</button>
+                <button class="topbar-btn danger" id="btnReset" style="display:none">&#8635; Reset</button>
+            </div>
+        </div>
+
+        <!-- Home View -->
+        <div class="view view-home active" id="viewHome">
+
+            <!-- Hero -->
+            <div class="hero">
+                <h1>Welcome to <span>SUMEE!</span></h1>
+                <p>Pick a console or load a ROM to start playing.</p>
+            </div>
+
+            <!-- 3D Carousel -->
+            <div class="carousel-wrap">
+                <div class="carousel-scene" id="carouselScene">
+                    <div class="carousel-ring" id="carouselRing"></div>
+                </div>
+                <div class="carousel-shadow"></div>
+                <div class="carousel-nav">
+                    <button class="carousel-btn" id="carouselPrev">&#9664;</button>
+                    <div class="carousel-dots" id="carouselDots"></div>
+                    <button class="carousel-btn" id="carouselNext">&#9654;</button>
+                </div>
+            </div>
+
+            <!-- Featured (3 consoles) -->
+            <div class="featured">
+                <div class="featured-title">Featured Consoles</div>
+                <div class="featured-sub">Three generations of gaming</div>
+                <div class="featured-grid">
+                    <div class="featured-card" data-console="nes">
+                        <span class="fc-emoji">&#127918;</span>
+                        <div class="fc-name">NES</div>
+                        <div class="fc-desc">8-bit Nintendo Entertainment System</div>
+                        <span class="fc-badge">256 &times; 240</span>
+                    </div>
+                    <div class="featured-card" data-console="ps1">
+                        <span class="fc-emoji">&#127918;</span>
+                        <div class="fc-name">PlayStation</div>
+                        <div class="fc-desc">32-bit 3D gaming revolution</div>
+                        <span class="fc-badge">320 &times; 240</span>
+                    </div>
+                    <div class="featured-card" data-console="psp">
+                        <span class="fc-emoji">&#128241;</span>
+                        <div class="fc-name">PSP</div>
+                        <div class="fc-desc">Portable entertainment powerhouse</div>
+                        <span class="fc-badge">480 &times; 272</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Consoles -->
+            <div class="consoles-section">
+                <div class="section-title">All Consoles</div>
+                <div class="consoles-grid">
+                    <div class="console-card" data-console="nes">
+                        <div class="console-card-color" style="background:var(--nes-color)"></div>
+                        <span class="console-card-emoji">&#127918;</span>
+                        <div class="console-card-name">NES</div>
+                        <div class="console-card-info">8-bit &middot; Nintendo</div>
+                        <span class="console-card-tag" style="background:var(--nes-color);color:var(--red-dark)">Mappers 0-3</span>
+                    </div>
+                    <div class="console-card" data-console="snes">
+                        <div class="console-card-color" style="background:var(--snes-color)"></div>
+                        <span class="console-card-emoji">&#127918;</span>
+                        <div class="console-card-name">SNES</div>
+                        <div class="console-card-info">16-bit &middot; Nintendo</div>
+                        <span class="console-card-tag" style="background:var(--snes-color);color:var(--blue-dark)">LoROM / HiROM</span>
+                    </div>
+                    <div class="console-card" data-console="n64">
+                        <div class="console-card-color" style="background:var(--n64-color)"></div>
+                        <span class="console-card-emoji">&#127922;</span>
+                        <div class="console-card-name">Nintendo 64</div>
+                        <div class="console-card-info">64-bit &middot; Nintendo</div>
+                        <span class="console-card-tag" style="background:var(--n64-color);color:var(--purple-dark)">MIPS R4300i</span>
+                    </div>
+                    <div class="console-card" data-console="gb">
+                        <div class="console-card-color" style="background:var(--gb-color)"></div>
+                        <span class="console-card-emoji">&#128241;</span>
+                        <div class="console-card-name">Game Boy</div>
+                        <div class="console-card-info">8-bit &middot; Nintendo</div>
+                        <span class="console-card-tag" style="background:var(--gb-color);color:var(--green-dark)">DMG / CGB</span>
+                    </div>
+                    <div class="console-card" data-console="genesis">
+                        <div class="console-card-color" style="background:var(--gen-color)"></div>
+                        <span class="console-card-emoji">&#127918;</span>
+                        <div class="console-card-name">Genesis</div>
+                        <div class="console-card-info">16-bit &middot; Sega</div>
+                        <span class="console-card-tag" style="background:var(--gen-color);color:var(--orange-dark)">M68000 + Z80</span>
+                    </div>
+                    <div class="console-card" data-console="ps1">
+                        <div class="console-card-color" style="background:var(--ps1-color)"></div>
+                        <span class="console-card-emoji">&#127918;</span>
+                        <div class="console-card-name">PlayStation</div>
+                        <div class="console-card-info">32-bit &middot; Sony</div>
+                        <span class="console-card-tag" style="background:var(--ps1-color);color:#3730a3">R3000A + GTE</span>
+                    </div>
+                    <div class="console-card" data-console="psp">
+                        <div class="console-card-color" style="background:var(--psp-color)"></div>
+                        <span class="console-card-emoji">&#128241;</span>
+                        <div class="console-card-name">PSP</div>
+                        <div class="console-card-info">Portable &middot; Sony</div>
+                        <span class="console-card-tag" style="background:var(--psp-color);color:#9d174d">Allegrex + GE</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload -->
+            <div class="upload-section">
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-zone-icon">&#128194;</div>
+                    <div class="upload-zone-text"><strong>Drop ROM files here</strong> or click to browse</div>
+                    <div class="upload-zone-hint">.nes .sfc .smc .n64 .z64 .v64 .gb .gbc .gen .md .bin .psx .pbp .elf .iso .cso</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Library View -->
+        <div class="view" id="viewLibrary">
+            <div style="padding:28px">
+                <div class="library-header">
+                    <h3>Game Library</h3>
+                    <div class="library-filters">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="nes">NES</button>
+                        <button class="filter-btn" data-filter="snes">SNES</button>
+                        <button class="filter-btn" data-filter="n64">N64</button>
+                        <button class="filter-btn" data-filter="gb">GB</button>
+                        <button class="filter-btn" data-filter="genesis">Genesis</button>
+                        <button class="filter-btn" data-filter="ps1">PS1</button>
+                        <button class="filter-btn" data-filter="psp">PSP</button>
+                    </div>
+                </div>
+                <div class="games-grid" id="gamesGrid">
+                    <div class="empty-state" id="libEmpty" style="grid-column:1/-1;">
+                        <div class="empty-state-icon">&#127918;</div>
+                        <h3>No games yet</h3>
+                        <p>Load some ROM files and they will appear here.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings View -->
+        <div class="view" id="viewSettings">
+            <div style="padding:28px">
+                <div class="settings-sections">
+                    <div class="settings-section">
+                        <h4>Emulation</h4>
+                        <div class="settings-row">
+                            <span class="settings-row-label">V-Sync</span>
+                            <div class="toggle on" id="toggleVsync"></div>
+                        </div>
+                        <div class="settings-row">
+                            <span class="settings-row-label">Audio</span>
+                            <div class="toggle on" id="toggleAudio"></div>
+                        </div>
+                        <div class="settings-row">
+                            <span class="settings-row-label">Region</span>
+                            <span class="settings-row-value">NTSC</span>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h4>Display</h4>
+                        <div class="settings-row">
+                            <span class="settings-row-label">Integer Scaling</span>
+                            <div class="toggle" id="toggleIntScale"></div>
+                        </div>
+                        <div class="settings-row">
+                            <span class="settings-row-label">CRT Scanlines</span>
+                            <div class="toggle" id="toggleScanlines"></div>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h4>Controls</h4>
+                        <div class="settings-row">
+                            <span class="settings-row-label">Keyboard Mapping</span>
+                            <button class="topbar-btn" id="btnKeyMap">Configure</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emulator View -->
+        <div class="emulator-view" id="viewEmulator">
+            <div class="emulator-screen-area">
+                <div class="emulator-status-bar">
+                    <div class="status-item" style="display:flex;align-items:center;gap:5px;"><div class="status-dot off" id="emuStatusDot"></div> <span id="emuStatusLabel">Stopped</span></div>
+                    <div class="status-item"><span id="emuConsoleLabel">--</span></div>
+                    <div class="status-item"><span id="emuRomLabel">--</span></div>
+                    <div class="status-item"><span id="emuFps">0 FPS</span></div>
+                </div>
+                <div class="emulator-bezel">
+                    <canvas id="emulatorCanvas" width="256" height="240"></canvas>
+                </div>
+            </div>
+            <div class="emulator-controls-bar">
+                <div class="control-group">
+                    <button class="ctrl-btn" id="emuBtnStart">&#9654; Play</button>
+                    <button class="ctrl-btn danger" id="emuBtnStop">&#9632; Stop</button>
+                    <button class="ctrl-btn" id="emuBtnReset">&#8635; Reset</button>
+                </div>
+                <div class="control-group">
+                    <button class="ctrl-btn" id="emuBtnFullscreen">&#9974; Full</button>
+                    <button class="ctrl-btn" id="emuBtnScreenshot">&#128247; Shot</button>
+                </div>
+                <div class="control-group speed-control">
+                    <label>Speed</label>
+                    <input type="range" class="speed-slider" id="speedSlider" min="0.25" max="4" step="0.25" value="1">
+                    <span class="speed-val" id="speedVal">1x</span>
+                </div>
+                <div class="control-group">
+                    <button class="ctrl-btn" id="emuBtnBack">&#8592; Back</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Key Mapping Modal -->
+<div class="modal-overlay" id="keyMapModal">
+    <div class="modal">
+        <h3>Keyboard Mapping</h3>
+        <div class="modal-keys">
+            <div class="modal-key-item"><span class="modal-key-label">D-Pad</span><span class="modal-key-value">Arrows</span></div>
+            <div class="modal-key-item"><span class="modal-key-label">A</span><span class="modal-key-value">X</span></div>
+            <div class="modal-key-item"><span class="modal-key-label">B</span><span class="modal-key-value">Z</span></div>
+            <div class="modal-key-item"><span class="modal-key-label">Start</span><span class="modal-key-value">Enter</span></div>
+            <div class="modal-key-item"><span class="modal-key-label">Select</span><span class="modal-key-value">Shift</span></div>
+            <div class="modal-key-item"><span class="modal-key-label">C-Up</span><span class="modal-key-value">I</span></div>
+            <div class="modal-key-item"><span class="modal-key-label">C-Down</span><span class="modal-key-value">K</span></div>
+            <div class="modal-key-item"><span class="modal-key-label">C-Left</span><span class="modal-key-value">J</span></div>
+            <div class="modal-key-item"><span class="modal-key-label">C-Right</span><span class="modal-key-value">L</span></div>
+            <div class="modal-key-item"><span class="modal-key-label">L Trigger</span><span class="modal-key-value">Q</span></div>
+            <div class="modal-key-item"><span class="modal-key-label">R Trigger</span><span class="modal-key-value">E</span></div>
+            <div class="modal-key-item"><span class="modal-key-label">Pause/Play</span><span class="modal-key-value">Space</span></div>
+        </div>
+        <div class="modal-actions">
+            <button class="topbar-btn" id="modalClose">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="nes.js"></script>
+<script src="snes.js"></script>
+<script src="n64.js"></script>
+<script src="gb.js"></script>
+<script src="genesis.js"></script>
+<script src="ps1.js"></script>
+<script src="psp.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
