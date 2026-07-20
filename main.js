@@ -201,6 +201,187 @@
         });
     }
 
+    // ==================== WII CURSOR ====================
+    function initWiiCursor() {
+        const cursor = $('#wiiCursor');
+        const trail = $('#wiiCursorTrail');
+        if (!cursor || !trail) return;
+        let mx = -100, my = -100, tx = -100, ty = -100;
+
+        document.addEventListener('mousemove', e => {
+            mx = e.clientX; my = e.clientY;
+        });
+
+        function updateCursor() {
+            tx += (mx - tx) * 0.35;
+            ty += (my - ty) * 0.35;
+            cursor.style.left = mx + 'px';
+            cursor.style.top = my + 'px';
+            trail.style.left = tx + 'px';
+            trail.style.top = ty + 'px';
+            requestAnimationFrame(updateCursor);
+        }
+        updateCursor();
+
+        document.body.classList.add('wii-cursor-active');
+
+        document.addEventListener('mousedown', e => {
+            const burst = document.createElement('div');
+            burst.className = 'click-burst';
+            burst.style.left = (e.clientX - 60) + 'px';
+            burst.style.top = (e.clientY - 60) + 'px';
+            document.body.appendChild(burst);
+            setTimeout(() => burst.remove(), 600);
+        });
+    }
+
+    // ==================== WII CHANNEL ZOOM ====================
+    function wiiZoomToConsole(cardEl, consoleId) {
+        const rect = cardEl.getBoundingClientRect();
+        const overlay = $('#wiiZoomOverlay');
+        const zoomCard = $('#wiiZoomCard');
+        if (!overlay || !zoomCard) { activeConsole = consoleId; showView('library'); return; }
+
+        const clone = cardEl.cloneNode(true);
+        clone.style.width = rect.width + 'px';
+        clone.style.height = rect.height + 'px';
+        clone.style.margin = '0';
+        clone.style.position = 'static';
+        clone.style.transform = 'none';
+
+        zoomCard.innerHTML = '';
+        zoomCard.appendChild(clone);
+        zoomCard.style.left = rect.left + 'px';
+        zoomCard.style.top = rect.top + 'px';
+        zoomCard.style.width = rect.width + 'px';
+        zoomCard.style.height = rect.height + 'px';
+        zoomCard.style.borderRadius = '16px';
+        zoomCard.style.background = 'white';
+        zoomCard.style.display = 'block';
+        zoomCard.classList.remove('wii-zooming');
+        overlay.style.display = 'block';
+        overlay.classList.remove('wii-active');
+        overlay.style.pointerEvents = 'all';
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                overlay.classList.add('wii-active');
+                zoomCard.classList.add('wii-zooming');
+                zoomCard.style.left = '0';
+                zoomCard.style.top = '0';
+                zoomCard.style.width = '100vw';
+                zoomCard.style.height = '100vh';
+                zoomCard.style.borderRadius = '0';
+            });
+        });
+
+        setTimeout(() => {
+            activeConsole = consoleId;
+            overlay.style.display = 'none';
+            overlay.classList.remove('wii-active');
+            overlay.style.pointerEvents = 'none';
+            zoomCard.style.display = 'none';
+            zoomCard.classList.remove('wii-zooming');
+            zoomCard.innerHTML = '';
+            showView('library');
+        }, 580);
+    }
+
+    // ==================== SPARKLES ====================
+    function createSparkles() {
+        const container = $('#sparkleContainer');
+        if (!container) return;
+        for (let i = 0; i < 12; i++) {
+            const s = document.createElement('div');
+            s.className = 'sparkle';
+            const size = 6 + Math.random() * 8;
+            s.style.width = size + 'px';
+            s.style.height = size + 'px';
+            s.style.left = Math.random() * 100 + '%';
+            s.style.top = Math.random() * 100 + '%';
+            s.innerHTML = '<div class="sparkle-core"></div>';
+            s.style.animation = `sparkleAnim ${2 + Math.random() * 3}s ${Math.random() * 6}s ease-in-out infinite`;
+            container.appendChild(s);
+        }
+    }
+
+    // ==================== TWINKLING STARS ====================
+    function createStars() {
+        const container = $('#starContainer');
+        if (!container) return;
+        for (let i = 0; i < 20; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = 6 + Math.random() * 10;
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 50 + '%';
+            star.style.animation = `twinkle ${2 + Math.random() * 4}s ${Math.random() * 5}s ease-in-out infinite`;
+            container.appendChild(star);
+        }
+    }
+
+    // ==================== PRISMATIC BANDS ====================
+    function createPrismaticBands() {
+        const body = document.body;
+        for (let i = 0; i < 4; i++) {
+            const band = document.createElement('div');
+            band.className = 'prismatic-band';
+            band.style.top = (15 + Math.random() * 60) + '%';
+            band.style.left = '0';
+            band.style.right = '0';
+            band.style.animationDuration = (12 + Math.random() * 15) + 's';
+            band.style.animationDelay = (Math.random() * 10) + 's';
+            body.appendChild(band);
+        }
+    }
+
+    // ==================== GLOW ORBS ====================
+    function createGlowOrbs() {
+        const body = document.body;
+        const orbColors = ['rgba(134,239,172,0.3)', 'rgba(59,130,246,0.25)', 'rgba(168,85,247,0.2)', 'rgba(236,72,153,0.2)', 'rgba(6,182,212,0.25)'];
+        for (let i = 0; i < 5; i++) {
+            const orb = document.createElement('div');
+            orb.className = 'glow-orb';
+            const size = 100 + Math.random() * 200;
+            orb.style.width = size + 'px';
+            orb.style.height = size + 'px';
+            orb.style.left = Math.random() * 100 + '%';
+            orb.style.top = Math.random() * 100 + '%';
+            orb.style.background = orbColors[i % orbColors.length];
+            orb.style.animation = `orbPulse ${8 + Math.random() * 10}s ${Math.random() * 8}s ease-in-out infinite`;
+            body.appendChild(orb);
+        }
+    }
+
+    // ==================== FLOATING PETALS ====================
+    function createPetals() {
+        const body = document.body;
+        for (let i = 0; i < 6; i++) {
+            const petal = document.createElement('div');
+            petal.className = 'petal';
+            const size = 8 + Math.random() * 10;
+            petal.style.width = size + 'px';
+            petal.style.height = size * 1.4 + 'px';
+            petal.style.left = Math.random() * 100 + '%';
+            petal.style.top = '-' + (size * 1.4 + 10) + 'px';
+            petal.innerHTML = '<div class="petal-shape"></div>';
+            petal.style.animation = `petalFall ${14 + Math.random() * 14}s ${Math.random() * 18}s linear infinite`;
+            body.appendChild(petal);
+        }
+    }
+
+    // ==================== CORNER LIGHT STREAKS ====================
+    function createCornerStreaks() {
+        const body = document.body;
+        ['tl', 'tr', 'bl', 'br'].forEach(pos => {
+            const el = document.createElement('div');
+            el.className = 'corner-streak corner-streak--' + pos;
+            body.appendChild(el);
+        });
+    }
+
     // ==================== 3D CAROUSEL ====================
     const CAROUSEL_CONSOLES = ['nes', 'snes', 'n64', 'genesis', 'ps1', 'psp', 'gb'];
     let carouselIdx = 0;
@@ -228,7 +409,7 @@
                     <div class="c-info">${c.info}</div>
                     <span class="c-tag" style="background:${c.color};color:${c.textColor}">${c.tag}</span>
                 </div>`;
-            item.addEventListener('click', () => { activeConsole = id; showView('library'); });
+            item.addEventListener('click', (e) => { e.stopPropagation(); wiiZoomToConsole(item, id); });
             ring.appendChild(item);
 
             const dot = document.createElement('div');
@@ -306,7 +487,10 @@
         });
     });
     $$('.console-card, .featured-card').forEach(card => {
-        card.addEventListener('click', () => { activeConsole = card.dataset.console; showView('library'); });
+        card.addEventListener('click', (e) => {
+            e.stopPropagation();
+            wiiZoomToConsole(card, card.dataset.console);
+        });
     });
 
     // ==================== ROM LOADING ====================
@@ -584,7 +768,14 @@
     createWaterDrops();
     createLightRays();
     createRipples();
+    createSparkles();
+    createStars();
+    createPrismaticBands();
+    createGlowOrbs();
+    createPetals();
+    createCornerStreaks();
     initParallax();
+    initWiiCursor();
     buildCarousel();
     renderLibrary();
     showToast('Welcome! Load a ROM to begin.', 'info');

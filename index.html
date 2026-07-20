@@ -18,7 +18,27 @@
 <div id="lightRayContainer" style="position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden;"></div>
 <div id="lensFlareContainer" style="position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden;"></div>
 <div id="rippleContainer" style="position:fixed;inset:0;z-index:49;pointer-events:none;overflow:hidden;"></div>
+<div id="sparkleContainer" style="position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden;"></div>
+<div id="starContainer" style="position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden;"></div>
 <div class="grass-strip"></div>
+
+<!-- Wii Cursor -->
+<div id="wiiCursor" style="position:fixed;z-index:99999;pointer-events:none;width:28px;height:28px;transform:translate(-4px,-4px);transition:opacity 0.2s;">
+    <svg viewBox="0 0 32 32" width="28" height="28" style="filter:drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 16px rgba(100,200,255,0.5));">
+        <circle cx="16" cy="16" r="6" fill="rgba(255,255,255,0.95)" stroke="rgba(100,180,255,0.8)" stroke-width="1.5"/>
+        <circle cx="16" cy="16" r="11" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>
+        <circle cx="16" cy="16" r="2.5" fill="rgba(100,200,255,0.9)"/>
+    </svg>
+</div>
+<div id="wiiCursorTrail" style="position:fixed;z-index:99998;pointer-events:none;width:12px;height:12px;transform:translate(-6px,-6px);opacity:0.5;">
+    <svg viewBox="0 0 24 24" width="12" height="12">
+        <circle cx="12" cy="12" r="5" fill="rgba(255,255,255,0.4)" filter="blur(2px)"/>
+    </svg>
+</div>
+
+<!-- Wii Zoom Overlay -->
+<div id="wiiZoomOverlay" style="position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0);pointer-events:none;display:none;"></div>
+<div id="wiiZoomCard" style="position:fixed;z-index:601;pointer-events:none;display:none;transition:all 0.55s cubic-bezier(0.25,0.1,0.25,1);"></div>
 
 <div class="app">
 

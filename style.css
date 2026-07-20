@@ -97,6 +97,9 @@ body {
 }
 
 /* ==================== FLOATING BUBBLES ==================== */
+.wii-cursor-active { cursor: none !important; }
+.wii-cursor-active * { cursor: none !important; }
+
 .bubble {
     position: fixed;
     border-radius: 50%;
@@ -386,9 +389,6 @@ body {
 
 /* ==================== LAYOUT ==================== */
 .app { display: flex; height: 100vh; height: 100dvh; position: relative; z-index: 2; }
-
-/* ==================== LAYOUT ==================== */
-.app { display: flex; height: 100vh; height: 100dvh; position: relative; }
 
 /* ==================== SIDEBAR ==================== */
 .sidebar {
@@ -1337,4 +1337,205 @@ body {
 
 .carousel-face:hover {
     box-shadow: var(--shadow-lg), 0 0 50px rgba(59,130,246,0.12), inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+/* ==================== WII ZOOM ANIMATION ==================== */
+#wiiZoomOverlay.wii-active {
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+#wiiZoomCard.wii-zooming {
+    border-radius: 20px;
+    box-shadow: 0 0 80px rgba(59,130,246,0.3);
+}
+
+/* ==================== SPARKLES ==================== */
+.sparkle {
+    position: fixed;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0;
+    will-change: transform, opacity;
+}
+
+.sparkle-core {
+    width: 100%; height: 100%;
+    position: relative;
+}
+
+.sparkle-core::before,
+.sparkle-core::after {
+    content: '';
+    position: absolute;
+    background: rgba(255,255,255,0.8);
+}
+
+.sparkle-core::before {
+    top: 0; left: 45%; width: 10%; height: 100%;
+    border-radius: 50%;
+}
+
+.sparkle-core::after {
+    top: 45%; left: 0; width: 100%; height: 10%;
+    border-radius: 50%;
+}
+
+@keyframes sparkleAnim {
+    0% { opacity: 0; transform: scale(0) rotate(0deg); }
+    20% { opacity: 1; transform: scale(1.2) rotate(45deg); }
+    40% { opacity: 0.6; transform: scale(0.8) rotate(90deg); }
+    60% { opacity: 1; transform: scale(1) rotate(135deg); }
+    80% { opacity: 0.4; transform: scale(0.6) rotate(180deg); }
+    100% { opacity: 0; transform: scale(0) rotate(225deg); }
+}
+
+/* ==================== TWINKLING STARS ==================== */
+.star {
+    position: fixed;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0;
+    will-change: opacity;
+}
+
+.star::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 2px; height: 2px;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 0 4px 1px rgba(255,255,255,0.6);
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 0.1; transform: scale(0.5); }
+    50% { opacity: 0.8; transform: scale(1.2); }
+}
+
+/* ==================== PRISMATIC GLOW BANDS ==================== */
+.prismatic-band {
+    position: fixed;
+    pointer-events: none;
+    z-index: 48;
+    height: 2px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255,100,100,0.15) 15%,
+        rgba(255,200,50,0.15) 25%,
+        rgba(100,255,100,0.15) 40%,
+        rgba(50,200,255,0.15) 55%,
+        rgba(150,100,255,0.15) 70%,
+        rgba(255,100,200,0.15) 85%,
+        transparent 100%);
+    filter: blur(3px);
+    opacity: 0;
+    animation: prismaticDrift linear infinite;
+}
+
+@keyframes prismaticDrift {
+    0% { opacity: 0; transform: translateX(-100%) scaleY(1); }
+    10% { opacity: 0.5; }
+    50% { opacity: 0.3; transform: translateX(0%) scaleY(2); }
+    90% { opacity: 0.5; }
+    100% { opacity: 0; transform: translateX(100vw) scaleY(1); }
+}
+
+/* ==================== GLOW ORBS ==================== */
+.glow-orb {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 47;
+    opacity: 0;
+    filter: blur(30px);
+    will-change: transform;
+}
+
+@keyframes orbPulse {
+    0% { opacity: 0; transform: scale(0.5); }
+    30% { opacity: 0.25; }
+    50% { transform: scale(1.2); }
+    70% { opacity: 0.15; }
+    100% { opacity: 0; transform: scale(0.8); }
+}
+
+/* ==================== FLOATING PETALS ==================== */
+.petal {
+    position: fixed;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0;
+    will-change: transform;
+}
+
+.petal-shape {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, rgba(244,114,182,0.35) 0%, rgba(251,146,180,0.2) 50%, rgba(253,186,200,0.15) 100%);
+    border-radius: 50% 0 50% 0;
+}
+
+@keyframes petalFall {
+    0% { transform: translateY(-30px) translateX(0) rotate(0deg); opacity: 0; }
+    5% { opacity: 0.55; }
+    25% { transform: translateY(25vh) translateX(30px) rotate(120deg); }
+    50% { transform: translateY(50vh) translateX(-20px) rotate(240deg); opacity: 0.4; }
+    75% { transform: translateY(75vh) translateX(15px) rotate(360deg); }
+    100% { transform: translateY(105vh) translateX(-8px) rotate(480deg); opacity: 0; }
+}
+
+/* ==================== CORNER LIGHT STREAKS ==================== */
+.corner-streak {
+    position: fixed;
+    pointer-events: none;
+    z-index: 47;
+    width: 200px; height: 200px;
+    opacity: 0;
+}
+
+.corner-streak--tl {
+    top: 0; left: 0;
+    background: radial-gradient(ellipse at 0% 0%, rgba(134,239,172,0.12) 0%, transparent 70%);
+    animation: streakPulse 8s ease-in-out infinite;
+}
+
+.corner-streak--tr {
+    top: 0; right: 0;
+    background: radial-gradient(ellipse at 100% 0%, rgba(59,130,246,0.10) 0%, transparent 70%);
+    animation: streakPulse 8s 2s ease-in-out infinite;
+}
+
+.corner-streak--bl {
+    bottom: 0; left: 0;
+    background: radial-gradient(ellipse at 0% 100%, rgba(168,85,247,0.08) 0%, transparent 70%);
+    animation: streakPulse 8s 4s ease-in-out infinite;
+}
+
+.corner-streak--br {
+    bottom: 0; right: 0;
+    background: radial-gradient(ellipse at 100% 100%, rgba(236,72,153,0.08) 0%, transparent 70%);
+    animation: streakPulse 8s 6s ease-in-out infinite;
+}
+
+@keyframes streakPulse {
+    0%, 100% { opacity: 0; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.3); }
+}
+
+/* ==================== CLICK BURST ==================== */
+.click-burst {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    border: 2px solid rgba(100,200,255,0.5);
+    animation: clickBurst 0.6s ease-out forwards;
+}
+
+@keyframes clickBurst {
+    0% { width: 0; height: 0; opacity: 0.8; }
+    100% { width: 120px; height: 120px; opacity: 0; }
 }
