@@ -97,9 +97,6 @@ body {
 }
 
 /* ==================== FLOATING BUBBLES ==================== */
-.wii-cursor-active { cursor: none !important; }
-.wii-cursor-active * { cursor: none !important; }
-
 .bubble {
     position: fixed;
     border-radius: 50%;
@@ -1538,4 +1535,139 @@ body {
 @keyframes clickBurst {
     0% { width: 0; height: 0; opacity: 0.8; }
     100% { width: 120px; height: 120px; opacity: 0; }
+}
+
+/* ==================== FLOATING BUTTERFLIES ==================== */
+.butterfly {
+    position: fixed;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0;
+    will-change: transform;
+}
+
+.butterfly-body {
+    position: relative;
+    width: 100%; height: 100%;
+}
+
+.butterfly-wing {
+    position: absolute;
+    border-radius: 50% 50% 20% 50%;
+    animation: wingFlap 0.3s ease-in-out infinite alternate;
+}
+
+.butterfly-wing--left {
+    left: 0; top: 0;
+    transform-origin: right center;
+}
+
+.butterfly-wing--right {
+    right: 0; top: 0;
+    transform-origin: left center;
+    transform: scaleX(-1);
+    animation-delay: 0.05s;
+}
+
+@keyframes wingFlap {
+    0% { transform: rotateY(0deg) scaleX(1); }
+    100% { transform: rotateY(60deg) scaleX(0.7); }
+}
+
+@keyframes butterflyFly {
+    0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+    5% { opacity: 0.7; }
+    20% { transform: translate(8vw, -5vh) rotate(5deg); }
+    40% { transform: translate(20vw, 2vh) rotate(-3deg); }
+    60% { transform: translate(35vw, -3vh) rotate(4deg); }
+    80% { transform: translate(50vw, 1vh) rotate(-2deg); }
+    95% { opacity: 0.5; }
+    100% { transform: translate(65vw, -4vh) rotate(3deg); opacity: 0; }
+}
+
+/* ==================== SWIMMING FISH ==================== */
+.fish {
+    position: fixed;
+    pointer-events: none;
+    z-index: 47;
+    opacity: 0;
+    will-change: transform;
+    font-size: 20px;
+}
+
+@keyframes fishSwim {
+    0% { transform: translateX(-50px) translateY(0) scaleX(1); opacity: 0; }
+    5% { opacity: 0.5; }
+    25% { transform: translateX(25vw) translateY(-15px) scaleX(1); }
+    50% { transform: translateX(50vw) translateY(10px) scaleX(1); }
+    75% { transform: translateX(75vw) translateY(-8px) scaleX(1); }
+    95% { opacity: 0.4; }
+    100% { transform: translateX(calc(100vw + 50px)) translateY(5px) scaleX(1); opacity: 0; }
+}
+
+@keyframes fishSwimReverse {
+    0% { transform: translateX(calc(100vw + 50px)) translateY(0) scaleX(-1); opacity: 0; }
+    5% { opacity: 0.45; }
+    25% { transform: translateX(75vw) translateY(12px) scaleX(-1); }
+    50% { transform: translateX(50vw) translateY(-8px) scaleX(-1); }
+    75% { transform: translateX(25vw) translateY(6px) scaleX(-1); }
+    95% { opacity: 0.35; }
+    100% { transform: translateX(-50px) translateY(-4px) scaleX(-1); opacity: 0; }
+}
+
+/* ==================== AURORA BOREALIS BANDS ==================== */
+.aurora-band {
+    position: fixed;
+    pointer-events: none;
+    z-index: 47;
+    left: -10%; right: -10%;
+    height: 120px;
+    opacity: 0;
+    filter: blur(40px);
+    will-change: transform;
+}
+
+.aurora-band--1 {
+    background: linear-gradient(90deg, transparent, rgba(134,239,172,0.12), rgba(52,211,153,0.15), transparent);
+    top: 8%;
+    animation: auroraWave 18s ease-in-out infinite alternate;
+}
+
+.aurora-band--2 {
+    background: linear-gradient(90deg, transparent, rgba(96,165,250,0.1), rgba(129,140,248,0.12), transparent);
+    top: 14%;
+    animation: auroraWave 22s 3s ease-in-out infinite alternate;
+}
+
+.aurora-band--3 {
+    background: linear-gradient(90deg, transparent, rgba(167,139,250,0.08), rgba(192,132,252,0.1), transparent);
+    top: 5%;
+    animation: auroraWave 16s 6s ease-in-out infinite alternate;
+}
+
+@keyframes auroraWave {
+    0% { opacity: 0; transform: translateX(-5%) scaleY(0.6) skewX(-3deg); }
+    30% { opacity: 0.8; }
+    70% { opacity: 0.6; }
+    100% { opacity: 0; transform: translateX(5%) scaleY(1.4) skewX(3deg); }
+}
+
+/* ==================== WATER SHIMMER ==================== */
+.water-shimmer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 80px;
+    pointer-events: none;
+    z-index: 48;
+    background: linear-gradient(180deg,
+        transparent 0%,
+        rgba(59,130,246,0.04) 30%,
+        rgba(59,130,246,0.08) 60%,
+        rgba(59,130,246,0.05) 100%);
+    animation: shimmerPulse 4s ease-in-out infinite alternate;
+}
+
+@keyframes shimmerPulse {
+    0% { opacity: 0.3; transform: scaleY(0.8); }
+    100% { opacity: 0.7; transform: scaleY(1.1); }
 }

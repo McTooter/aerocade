@@ -20,19 +20,25 @@
 <div id="rippleContainer" style="position:fixed;inset:0;z-index:49;pointer-events:none;overflow:hidden;"></div>
 <div id="sparkleContainer" style="position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden;"></div>
 <div id="starContainer" style="position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden;"></div>
+<div id="butterflyContainer" style="position:fixed;inset:0;z-index:50;pointer-events:none;overflow:hidden;"></div>
+<div id="fishContainer" style="position:fixed;inset:0;z-index:47;pointer-events:none;overflow:hidden;opacity:0.3;"></div>
+<div id="auroraBandContainer" style="position:fixed;inset:0;z-index:47;pointer-events:none;overflow:hidden;"></div>
 <div class="grass-strip"></div>
 
 <!-- Wii Cursor -->
-<div id="wiiCursor" style="position:fixed;z-index:99999;pointer-events:none;width:28px;height:28px;transform:translate(-4px,-4px);transition:opacity 0.2s;">
-    <svg viewBox="0 0 32 32" width="28" height="28" style="filter:drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 16px rgba(100,200,255,0.5));">
-        <circle cx="16" cy="16" r="6" fill="rgba(255,255,255,0.95)" stroke="rgba(100,180,255,0.8)" stroke-width="1.5"/>
-        <circle cx="16" cy="16" r="11" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>
-        <circle cx="16" cy="16" r="2.5" fill="rgba(100,200,255,0.9)"/>
-    </svg>
-</div>
-<div id="wiiCursorTrail" style="position:fixed;z-index:99998;pointer-events:none;width:12px;height:12px;transform:translate(-6px,-6px);opacity:0.5;">
-    <svg viewBox="0 0 24 24" width="12" height="12">
-        <circle cx="12" cy="12" r="5" fill="rgba(255,255,255,0.4)" filter="blur(2px)"/>
+<div id="wiiCursor" style="position:fixed;z-index:99999;pointer-events:none;opacity:0;transition:opacity 0.15s;">
+    <svg viewBox="0 0 64 64" width="40" height="40" style="filter:drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(100,200,255,0.6));">
+        <defs>
+            <radialGradient id="wiiGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" style="stop-color:rgba(255,255,255,1)"/>
+                <stop offset="40%" style="stop-color:rgba(200,230,255,0.8)"/>
+                <stop offset="100%" style="stop-color:rgba(100,180,255,0)"/>
+            </radialGradient>
+        </defs>
+        <circle cx="32" cy="32" r="28" fill="url(#wiiGlow)" opacity="0.5"/>
+        <circle cx="32" cy="32" r="14" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.2"/>
+        <circle cx="32" cy="32" r="8" fill="rgba(255,255,255,0.9)" stroke="rgba(180,220,255,0.6)" stroke-width="1"/>
+        <circle cx="32" cy="32" r="3" fill="rgba(100,200,255,0.95)"/>
     </svg>
 </div>
 

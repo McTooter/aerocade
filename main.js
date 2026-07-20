@@ -204,26 +204,38 @@
     // ==================== WII CURSOR ====================
     function initWiiCursor() {
         const cursor = $('#wiiCursor');
-        const trail = $('#wiiCursorTrail');
-        if (!cursor || !trail) return;
-        let mx = -100, my = -100, tx = -100, ty = -100;
+        if (!cursor) return;
+        let mx = -100, my = -100;
+        let curX = -100, curY = -100;
+        let visible = false;
+
+        // Create a tiny transparent cursor via CSS
+        const style = document.createElement('style');
+        style.textContent = `*, *::before, *::after { cursor: none !important; }`;
+        document.head.appendChild(style);
 
         document.addEventListener('mousemove', e => {
             mx = e.clientX; my = e.clientY;
+            if (!visible) {
+                visible = true;
+                cursor.style.opacity = '1';
+                cursor.style.transition = 'opacity 0.3s ease';
+            }
         });
 
-        function updateCursor() {
-            tx += (mx - tx) * 0.35;
-            ty += (my - ty) * 0.35;
-            cursor.style.left = mx + 'px';
-            cursor.style.top = my + 'px';
-            trail.style.left = tx + 'px';
-            trail.style.top = ty + 'px';
-            requestAnimationFrame(updateCursor);
-        }
-        updateCursor();
+        document.addEventListener('mouseleave', () => {
+            visible = false;
+            cursor.style.opacity = '0';
+        });
 
-        document.body.classList.add('wii-cursor-active');
+        function tick() {
+            curX += (mx - curX) * 0.3;
+            curY += (my - curY) * 0.3;
+            cursor.style.left = (curX - 20) + 'px';
+            cursor.style.top = (curY - 20) + 'px';
+            requestAnimationFrame(tick);
+        }
+        tick();
 
         document.addEventListener('mousedown', e => {
             const burst = document.createElement('div');
@@ -380,6 +392,71 @@
             el.className = 'corner-streak corner-streak--' + pos;
             body.appendChild(el);
         });
+    }
+
+    // ==================== BUTTERFLIES ====================
+    function createButterflies() {
+        const container = $('#butterflyContainer');
+        if (!container) return;
+        const colors = [
+            ['rgba(59,130,246,0.5)', 'rgba(96,165,250,0.4)'],
+            ['rgba(236,72,153,0.45)', 'rgba(244,114,182,0.35)'],
+            ['rgba(139,92,246,0.4)', 'rgba(167,139,250,0.35)'],
+            ['rgba(16,185,129,0.45)', 'rgba(52,211,153,0.35)'],
+            ['rgba(251,191,36,0.4)', 'rgba(252,211,77,0.3)'],
+        ];
+        for (let i = 0; i < 6; i++) {
+            const b = document.createElement('div');
+            b.className = 'butterfly';
+            const size = 14 + Math.random() * 10;
+            b.style.width = (size * 2) + 'px';
+            b.style.height = size + 'px';
+            b.style.left = (-50 - Math.random() * 100) + 'px';
+            b.style.top = (10 + Math.random() * 50) + '%';
+            const c = colors[i % colors.length];
+            b.innerHTML = `<div class="butterfly-body">
+                <div class="butterfly-wing butterfly-wing--left" style="width:${size}px;height:${size}px;background:radial-gradient(circle at 60% 40%,${c[0]},${c[1]});"></div>
+                <div class="butterfly-wing butterfly-wing--right" style="width:${size}px;height:${size}px;background:radial-gradient(circle at 40% 40%,${c[0]},${c[1]});"></div>
+            </div>`;
+            b.style.animation = `butterflyFly ${15 + Math.random() * 20}s ${Math.random() * 15}s ease-in-out infinite`;
+            container.appendChild(b);
+        }
+    }
+
+    // ==================== SWIMMING FISH ====================
+    function createFish() {
+        const container = $('#fishContainer');
+        if (!container) return;
+        const fishEmojis = ['\u{1F41F}', '\u{1F420}', '\u{1F421}', '\u{1F419}', '\u{1FAB8}'];
+        for (let i = 0; i < 5; i++) {
+            const fish = document.createElement('div');
+            fish.className = 'fish';
+            fish.textContent = fishEmojis[i % fishEmojis.length];
+            fish.style.fontSize = (16 + Math.random() * 12) + 'px';
+            fish.style.left = '0';
+            fish.style.bottom = (5 + Math.random() * 20) + '%';
+            fish.style.animation = (i % 2 === 0 ? 'fishSwim' : 'fishSwimReverse') +
+                ` ${18 + Math.random() * 20}s ${Math.random() * 15}s linear infinite`;
+            container.appendChild(fish);
+        }
+    }
+
+    // ==================== AURORA BOREALIS BANDS ====================
+    function createAuroraBands() {
+        const container = $('#auroraBandContainer');
+        if (!container) return;
+        for (let i = 1; i <= 3; i++) {
+            const band = document.createElement('div');
+            band.className = 'aurora-band aurora-band--' + i;
+            container.appendChild(band);
+        }
+    }
+
+    // ==================== WATER SHIMMER ====================
+    function createWaterShimmer() {
+        const shimmer = document.createElement('div');
+        shimmer.className = 'water-shimmer';
+        document.body.appendChild(shimmer);
     }
 
     // ==================== 3D CAROUSEL ====================
@@ -774,6 +851,10 @@
     createGlowOrbs();
     createPetals();
     createCornerStreaks();
+    createButterflies();
+    createFish();
+    createAuroraBands();
+    createWaterShimmer();
     initParallax();
     initWiiCursor();
     buildCarousel();
