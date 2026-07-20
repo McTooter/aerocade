@@ -11,6 +11,7 @@
     let animFrameId = null, lastTime = 0, framesThisSec = 0, fpsTime = 0;
     let currentRomName = '';
     let gameLibrary = [];
+    let usingEmulatorJS = false;
 
     const keys = { A:0, B:0, Select:0, Start:0, Up:0, Down:0, Left:0, Right:0 };
 
@@ -603,8 +604,122 @@
         activeConsole = consoleId;
         currentRomName = file.name.replace(/\.[^.]+$/, '');
         let reader = new FileReader();
-        reader.onload = e => { startEmulator(consoleId, new Uint8Array(e.target.result), file.name); };
+        reader.onload = e => {
+            let romData = new Uint8Array(e.target.result);
+            if (consoleId === 'n64') {
+                launchEmulatorJS('n64', romData, file.name);
+            } else {
+                startEmulator(consoleId, romData, file.name);
+            }
+        };
         reader.readAsArrayBuffer(file);
+    }
+
+    function launchEmulatorJS(consoleId, romData, romName) {
+        stopEmulator();
+        activeConsole = consoleId;
+        usingEmulatorJS = true;
+        currentRomName = romName || 'Unknown';
+
+        let blobUrl = URL.createObjectURL(new Blob([romData], { type: 'application/octet-stream' }));
+        let c = CONSOLES[consoleId];
+        canvas.width = c.width; canvas.height = c.height;
+
+        addToLibrary(currentRomName, consoleId);
+        $('#emuConsoleLabel').textContent = c.name;
+        $('#emuRomLabel').textContent = currentRomName;
+        showView('emulator');
+
+        canvas.style.display = 'none';
+        let ejsContainer = $('#ejsContainer');
+        ejsContainer.style.display = 'block';
+        ejsContainer.innerHTML = '';
+
+        let iframe = document.createElement('iframe');
+        iframe.style.cssText = 'width:100%;height:100%;border:none;border-radius:8px;';
+        iframe.allow = 'autoplay; fullscreen';
+
+        let ejsColor = '#a855f7';
+        let gameNameClean = currentRomName.replace(/[^a-zA-Z0-9]/g, '_');
+
+        iframe.srcdoc = `<!DOCTYPE html>
+<html><head><style>body,html{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;}</style></head>
+<body><div id="game" style="width:100%;height:100%;"></div>
+<script>
+EJS_player = '#game';
+EJS_core = '${consoleId}';
+EJS_gameUrl = '${blobUrl}';
+EJS_gameName = '${gameNameClean}';
+EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+EJS_color = '${ejsColor}';
+EJS_startOnLoaded = true;
+EJS_askBeforeExit = false;
+EJS_controlScheme = 'n64';
+EJS_Buttons = {
+    playPause: false,
+    restart: true,
+    mute: true,
+    settings: true,
+    fullscreen: true,
+    saveState: true,
+    loadState: true,
+    screenRecord: false,
+    gamepad: true,
+    cheat: false,
+    volume: true,
+    saveSavFiles: false,
+    loadSavFiles: false,
+    quickSave: false,
+    quickLoad: false,
+    screenshot: true,
+    cacheManager: false,
+    exitEmulation: true
+};
+EJS_defaultControls = {
+    0: {
+        0: { 'value': 'x', 'value2': 'BUTTON_2' },
+        1: { 'value': 's', 'value2': 'BUTTON_4' },
+        2: { 'value': 'v', 'value2': 'SELECT' },
+        3: { 'value': 'enter', 'value2': 'START' },
+        4: { 'value': 'up arrow', 'value2': 'DPAD_UP' },
+        5: { 'value': 'down arrow', 'value2': 'DPAD_DOWN' },
+        6: { 'value': 'left arrow', 'value2': 'DPAD_LEFT' },
+        7: { 'value': 'right arrow', 'value2': 'DPAD_RIGHT' },
+        8: { 'value': 'z', 'value2': 'BUTTON_1' },
+        9: { 'value': 'a', 'value2': 'BUTTON_3' },
+        10: { 'value': 'q', 'value2': 'LEFT_TOP_SHOULDER' },
+        11: { 'value': 'e', 'value2': 'RIGHT_TOP_SHOULDER' },
+        12: { 'value': 'tab', 'value2': 'LEFT_BOTTOM_SHOULDER' },
+        13: { 'value': 'r', 'value2': 'RIGHT_BOTTOM_SHOULDER' },
+        14: { 'value': '', 'value2': 'LEFT_STICK' },
+        15: { 'value': '', 'value2': 'RIGHT_STICK' },
+        16: { 'value': 'l', 'value2': 'LEFT_STICK_X:+1' },
+        17: { 'value': 'j', 'value2': 'LEFT_STICK_X:-1' },
+        18: { 'value': 'k', 'value2': 'LEFT_STICK_Y:+1' },
+        19: { 'value': 'i', 'value2': 'LEFT_STICK_Y:-1' },
+        20: { 'value': 'n', 'value2': 'RIGHT_STICK_X:+1' },
+        21: { 'value': 'b', 'value2': 'RIGHT_STICK_X:-1' },
+        22: { 'value': 'm', 'value2': 'RIGHT_STICK_Y:+1' },
+        23: { 'value': 'h', 'value2': 'RIGHT_STICK_Y:-1' },
+        24: { 'value': '1' },
+        25: { 'value': '2' },
+        26: { 'value': '3' },
+        27: { 'value': 'add' },
+        28: { 'value': 'space' },
+        29: { 'value': 'subtract' }
+    }, 1: {}, 2: {}, 3: {}
+};
+</script>
+<script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script>
+</body></html>`;
+
+        ejsContainer.appendChild(iframe);
+
+        running = true;
+        $('#emuStatusDot').classList.add('on');
+        $('#emuStatusLabel').textContent = 'Running (EmulatorJS)';
+        $('#btnStartStop').innerHTML = '&#9646;&#9646; Pause';
+        showToast('Loaded: ' + currentRomName + ' (EmulatorJS)', 'success');
     }
 
     function startEmulator(consoleId, romData, romName) {
@@ -648,12 +763,23 @@
     function stopEmulator() {
         running = false;
         if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+        if (usingEmulatorJS) {
+            let ejsContainer = $('#ejsContainer');
+            if (ejsContainer) { ejsContainer.innerHTML = ''; ejsContainer.style.display = 'none'; }
+            canvas.style.display = '';
+            usingEmulatorJS = false;
+        }
+        activeEmulator = null;
         $('#emuStatusDot').classList.remove('on');
         $('#emuStatusLabel').textContent = 'Stopped';
         $('#btnStartStop').innerHTML = '&#9654; Start';
     }
 
     function resetEmulator() {
+        if (usingEmulatorJS) {
+            showToast('Reset not available for EmulatorJS — reload the ROM', 'info');
+            return;
+        }
         if (!activeEmulator || !activeConsole) return;
         stopEmulator();
         let romData = activeEmulator.romData || activeEmulator.mapper?.rom || activeEmulator.rom;
@@ -671,7 +797,8 @@
     const imgCache = {};
 
     function renderLoop() {
-        if (!running || !activeEmulator) return;
+        if (!running || (!activeEmulator && !usingEmulatorJS)) return;
+        if (usingEmulatorJS) return;
         let now = performance.now();
         let elapsed = now - lastTime;
         let targetMs = 1000 / (60 * speed);
@@ -737,6 +864,21 @@
 
     // ==================== BUTTONS ====================
     $('#btnStartStop').addEventListener('click', () => {
+        if (usingEmulatorJS) {
+            if (running) {
+                running = false;
+                $('#emuStatusDot').classList.remove('on');
+                $('#emuStatusLabel').textContent = 'Paused';
+                $('#btnStartStop').innerHTML = '&#9654; Resume';
+                showToast('Use EmulatorJS controls to pause/resume', 'info');
+            } else {
+                running = true;
+                $('#emuStatusDot').classList.add('on');
+                $('#emuStatusLabel').textContent = 'Running (EmulatorJS)';
+                $('#btnStartStop').innerHTML = '&#9646;&#9646; Pause';
+            }
+            return;
+        }
         if (running) {
             running = false;
             if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
@@ -759,12 +901,24 @@
     $('#emuBtnBack').addEventListener('click', () => { stopEmulator(); showView('home'); });
 
     $('#emuBtnFullscreen').addEventListener('click', () => {
+        if (usingEmulatorJS) {
+            let iframe = $('#ejsContainer')?.querySelector('iframe');
+            if (iframe && iframe.contentDocument) {
+                let fsEl = iframe.contentDocument.querySelector('.ejs_parent') || iframe;
+                if (fsEl.requestFullscreen) fsEl.requestFullscreen();
+            }
+            return;
+        }
         let el = views.emulator;
         if (el.requestFullscreen) el.requestFullscreen();
         else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
     });
 
     $('#emuBtnScreenshot').addEventListener('click', () => {
+        if (usingEmulatorJS) {
+            showToast('Screenshot available via EmulatorJS toolbar', 'info');
+            return;
+        }
         let link = document.createElement('a');
         link.download = (currentRomName || 'screenshot') + '.png';
         link.href = canvas.toDataURL('image/png');
