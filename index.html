@@ -70,6 +70,13 @@
                 <div class="sidebar-logo-icon">S</div>
                 <div class="sidebar-logo-text">Sum<span>ee</span></div>
             </div>
+            <div class="sidebar-user" id="sidebarUser" style="display:none;">
+                <div class="sidebar-user-mii" id="sidebarUserMii"></div>
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-name" id="sidebarUserName"></div>
+                    <div class="sidebar-user-role" id="sidebarUserRole"></div>
+                </div>
+            </div>
         </div>
         <nav class="sidebar-nav">
             <div class="nav-section">
@@ -83,6 +90,9 @@
                 </div>
                 <div class="nav-item" data-view="wiishop">
                     <span class="nav-icon" style="background:#e0f2fe;">&#127978;</span> Wii Shop
+                </div>
+                <div class="nav-item" data-view="miimaker">
+                    <span class="nav-icon" style="background:#fce7f3;">&#128100;</span> Mii Maker
                 </div>
                 <div class="nav-item" data-view="settings">
                     <span class="nav-icon" style="background:#f1f5f9;">&#9881;</span> Settings
@@ -114,6 +124,9 @@
             </div>
         </nav>
         <div class="sidebar-footer">
+            <button class="sidebar-footer-btn" id="btnAccount">
+                &#128100; Account
+            </button>
             <button class="sidebar-footer-btn" id="btnLoadRom">
                 &#128194; Load ROM
             </button>
@@ -328,6 +341,66 @@
             </div>
         </div>
 
+        <!-- Mii Maker View -->
+        <div class="view" id="viewMiiMaker">
+            <div class="miimaker-wrap">
+                <div class="miimaker-header">
+                    <h3>&#128100; Mii Maker</h3>
+                    <p>Create your Mii avatar to represent you across SUMEE!</p>
+                </div>
+                <div class="miimaker-content">
+                    <div class="miimaker-preview-area">
+                        <div class="miimaker-mii-display" id="miiDisplay">
+                            <div class="mii-head" id="miiHead"></div>
+                            <div class="mii-body" id="miiBody"></div>
+                        </div>
+                        <div class="miimaker-name-input">
+                            <input type="text" id="miiNameInput" placeholder="Mii Name" maxlength="16">
+                        </div>
+                    </div>
+                    <div class="miimaker-controls">
+                        <div class="miimaker-section">
+                            <div class="miimaker-section-title">Face Shape</div>
+                            <div class="miimaker-row" id="miiFaceRow"></div>
+                        </div>
+                        <div class="miimaker-section">
+                            <div class="miimaker-section-title">Skin Color</div>
+                            <div class="miimaker-row" id="miiSkinRow"></div>
+                        </div>
+                        <div class="miimaker-section">
+                            <div class="miimaker-section-title">Hair Style</div>
+                            <div class="miimaker-row" id="miiHairRow"></div>
+                        </div>
+                        <div class="miimaker-section">
+                            <div class="miimaker-section-title">Hair Color</div>
+                            <div class="miimaker-row" id="miiHairColorRow"></div>
+                        </div>
+                        <div class="miimaker-section">
+                            <div class="miimaker-section-title">Eyes</div>
+                            <div class="miimaker-row" id="miiEyesRow"></div>
+                        </div>
+                        <div class="miimaker-section">
+                            <div class="miimaker-section-title">Mouth</div>
+                            <div class="miimaker-row" id="miiMouthRow"></div>
+                        </div>
+                        <div class="miimaker-section">
+                            <div class="miimaker-section-title">Eyebrows</div>
+                            <div class="miimaker-row" id="miiBrowRow"></div>
+                        </div>
+                        <div class="miimaker-section">
+                            <div class="miimaker-section-title">Accessories</div>
+                            <div class="miimaker-row" id="miiAccRow"></div>
+                        </div>
+                        <div class="miimaker-actions">
+                            <button class="miimaker-btn primary" id="miiSaveBtn">Save Mii</button>
+                            <button class="miimaker-btn" id="miiRandomBtn">Random</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="miimaker-saved" id="miiSavedList"></div>
+            </div>
+        </div>
+
         <!-- Settings View -->
         <div class="view" id="viewSettings">
             <div style="padding:28px">
@@ -378,7 +451,7 @@
                     <div class="status-item"><span id="emuRomLabel">--</span></div>
                     <div class="status-item"><span id="emuFps">0 FPS</span></div>
                 </div>
-                <div class="emulator-bezel">
+                <div class="emulator-bezel canvas-mode">
                     <canvas id="emulatorCanvas" width="256" height="240"></canvas>
                     <div id="ejsContainer" style="display:none;width:100%;height:100%;position:absolute;inset:0;"></div>
                 </div>
@@ -455,8 +528,78 @@
                 <span>Wii Points</span>
             </div>
             <button class="gd-action-btn get">Get</button>
+            <button class="gd-admin-edit-btn" id="gdAdminEdit" style="display:none;margin-top:8px;">&#9998; Edit Cover & Video</button>
         </div>
         <div class="gd-video-section"></div>
+    </div>
+</div>
+
+<!-- Account Modal -->
+<div class="modal-overlay" id="accountModal">
+    <div class="ac-modal">
+        <button class="gd-close" id="acClose">&times;</button>
+        <div class="ac-header">
+            <div class="ac-logo">S</div>
+            <h3 id="acTitle">Sign In</h3>
+        </div>
+        <div class="ac-body" id="acBody">
+            <div class="ac-form" id="acLoginForm">
+                <div class="ac-field">
+                    <label>Username</label>
+                    <input type="text" id="acUsername" placeholder="Enter username" maxlength="20">
+                </div>
+                <div class="ac-field">
+                    <label>Password</label>
+                    <input type="password" id="acPassword" placeholder="Enter password">
+                </div>
+                <button class="ac-btn primary" id="acSignInBtn">Sign In</button>
+                <p class="ac-switch">Don't have an account? <a href="#" id="acShowRegister">Create one</a></p>
+            </div>
+            <div class="ac-form" id="acRegisterForm" style="display:none;">
+                <div class="ac-field">
+                    <label>Username</label>
+                    <input type="text" id="acRegUsername" placeholder="Choose a username" maxlength="20">
+                </div>
+                <div class="ac-field">
+                    <label>Password</label>
+                    <input type="password" id="acRegPassword" placeholder="Choose a password">
+                </div>
+                <div class="ac-field">
+                    <label>Confirm Password</label>
+                    <input type="password" id="acRegConfirm" placeholder="Confirm password">
+                </div>
+                <button class="ac-btn primary" id="acRegisterBtn">Create Account</button>
+                <p class="ac-switch">Already have an account? <a href="#" id="acShowLogin">Sign in</a></p>
+            </div>
+        </div>
+        <div class="ac-error" id="acError"></div>
+    </div>
+</div>
+
+<!-- Admin Game Edit Modal -->
+<div class="modal-overlay" id="gameEditModal">
+    <div class="ge-modal">
+        <button class="gd-close" id="geClose">&times;</button>
+        <h3>&#9998; Edit Game</h3>
+        <div class="ge-fields">
+            <div class="ge-field">
+                <label>Video URL (YouTube or direct)</label>
+                <input type="text" id="geVideoUrl" placeholder="https://youtube.com/watch?v=...">
+            </div>
+            <div class="ge-field">
+                <label>Cover Gradient (CSS)</label>
+                <input type="text" id="geCoverBg" placeholder="linear-gradient(135deg, #color1, #color2)">
+            </div>
+            <div class="ge-field">
+                <label>Cover Emoji</label>
+                <input type="text" id="geCoverEmoji" placeholder="&#127918;" maxlength="4">
+            </div>
+            <div class="ge-field">
+                <label>Description</label>
+                <textarea id="geDesc" rows="2" placeholder="Game description..."></textarea>
+            </div>
+        </div>
+        <button class="ac-btn primary" id="geSaveBtn">Save Changes</button>
     </div>
 </div>
 

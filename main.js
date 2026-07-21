@@ -5,7 +5,7 @@
     const canvas = $('#emulatorCanvas');
     const ctx = canvas.getContext('2d');
     const romFileInput = $('#romFileInput');
-    const views = { home: $('#viewHome'), library: $('#viewLibrary'), settings: $('#viewSettings'), emulator: $('#viewEmulator'), wiishop: $('#viewWiiShop') };
+    const views = { home: $('#viewHome'), library: $('#viewLibrary'), settings: $('#viewSettings'), emulator: $('#viewEmulator'), wiishop: $('#viewWiiShop'), miimaker: $('#viewMiiMaker') };
 
     let activeConsole = null, activeEmulator = null, running = false, speed = 1;
     let animFrameId = null, lastTime = 0, framesThisSec = 0, fpsTime = 0;
@@ -682,6 +682,8 @@
         let ejsContainer = $('#ejsContainer');
         ejsContainer.style.display = 'block';
         ejsContainer.innerHTML = '';
+        const bezel = $('.emulator-bezel');
+        if (bezel) bezel.classList.remove('canvas-mode');
 
         let iframe = document.createElement('iframe');
         iframe.style.cssText = 'width:100%;height:100%;border:none;border-radius:8px;';
@@ -712,6 +714,8 @@
             currentRomName = romName || 'Unknown';
             let c = CONSOLES[consoleId];
             canvas.width = c.width; canvas.height = c.height;
+            const bezel = $('.emulator-bezel');
+            if (bezel) bezel.classList.add('canvas-mode');
 
             addToLibrary(currentRomName, consoleId);
             $('#emuConsoleLabel').textContent = c.name;
@@ -755,6 +759,8 @@
             let ejsContainer = $('#ejsContainer');
             if (ejsContainer) { ejsContainer.innerHTML = ''; ejsContainer.style.display = 'none'; }
             canvas.style.display = '';
+            const bezel = $('.emulator-bezel');
+            if (bezel) bezel.classList.add('canvas-mode');
             usingEmulatorJS = false;
         }
         activeEmulator = null;
@@ -1129,7 +1135,11 @@
         modal.querySelector('.gd-cover-badge').textContent = g.rating;
         modal.querySelector('.gd-cover-year').textContent = g.year;
         modal.querySelector('.gd-name').textContent = g.name;
-        modal.querySelector('.gd-console').textContent = (c ? c.name : g.console);
+        const consoleEl = modal.querySelector('.gd-console');
+        consoleEl.textContent = (c ? c.name : g.console);
+        consoleEl.setAttribute('data-cons', g.console);
+        const pillEl = modal.querySelector('.gd-console-pill');
+        if (pillEl) { pillEl.textContent = (c ? c.name : g.console); pillEl.setAttribute('data-cons', g.console); }
         modal.querySelector('.gd-desc').textContent = g.desc;
         modal.querySelector('.gd-price-val').textContent = g.price.toLocaleString();
         modal.querySelector('.gd-video-section').innerHTML = videoHtml;
@@ -1141,6 +1151,9 @@
 
         modal.classList.add('show');
         modal.dataset.idx = idx;
+
+        const gdAdminEdit = document.getElementById('gdAdminEdit');
+        if (gdAdminEdit) gdAdminEdit.dataset.gameIdx = idx;
     }
 
     function closeGameDetail() {
@@ -1287,4 +1300,337 @@
     renderLibrary();
     renderShopGrid('all');
     showToast('Welcome! Load a ROM to begin.', 'info');
+    initAccountSystem();
+    initMiiMaker();
 })();
+
+/* ==================== ACCOUNT SYSTEM ==================== */
+function initAccountSystem() {
+    const LS_KEY = 'aerocade_accounts';
+    const SESSION_KEY = 'aerocade_session';
+
+    function getAccounts() { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }
+    function saveAccounts(a) { localStorage.setItem(LS_KEY, JSON.stringify(a)); }
+    function getSession() { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
+    function saveSession(s) { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
+    function clearSession() { localStorage.removeItem(SESSION_KEY); }
+
+    function isAdmin() {
+        const s = getSession();
+        return s && s.role === 'admin';
+    }
+
+    function updateSidebarUser() {
+        const s = getSession();
+        const el = document.getElementById('sidebarUser');
+        const miiEl = document.getElementById('sidebarUserMii');
+        const nameEl = document.getElementById('sidebarUserName');
+        const roleEl = document.getElementById('sidebarUserRole');
+        if (!s) { el.style.display = 'none'; return; }
+        el.style.display = 'flex';
+        miiEl.innerHTML = s.mii?.face || '🙂';
+        miiEl.style.background = `linear-gradient(135deg, ${s.mii?.skin || '#fce7f3'}, ${s.mii?.hairColor || '#f3e8ff'})`;
+        nameEl.textContent = s.username;
+        roleEl.textContent = s.role === 'admin' ? '★ Admin' : 'Member';
+        if (s.role === 'admin') roleEl.style.color = '#818cf8';
+    }
+
+    const acctModal = document.getElementById('accountModal');
+    const acTitle = document.getElementById('acTitle');
+    const acLoginForm = document.getElementById('acLoginForm');
+    const acRegisterForm = document.getElementById('acRegisterForm');
+    const acError = document.getElementById('acError');
+
+    function showAcctError(msg) { acError.textContent = msg; acError.classList.add('show'); }
+    function hideAcctError() { acError.classList.remove('show'); }
+
+    document.getElementById('btnAccount').addEventListener('click', () => {
+        const s = getSession();
+        if (s) {
+            clearSession();
+            updateSidebarUser();
+            showToast('Signed out.', 'info');
+            return;
+        }
+        hideAcctError();
+        acTitle.textContent = 'Sign In';
+        acLoginForm.style.display = 'block';
+        acRegisterForm.style.display = 'none';
+        acctModal.classList.add('show');
+    });
+
+    document.getElementById('acClose').addEventListener('click', () => {
+        acctModal.classList.remove('show');
+    });
+
+    document.getElementById('acShowRegister').addEventListener('click', (e) => {
+        e.preventDefault();
+        hideAcctError();
+        acTitle.textContent = 'Create Account';
+        acLoginForm.style.display = 'none';
+        acRegisterForm.style.display = 'block';
+    });
+
+    document.getElementById('acShowLogin').addEventListener('click', (e) => {
+        e.preventDefault();
+        hideAcctError();
+        acTitle.textContent = 'Sign In';
+        acLoginForm.style.display = 'block';
+        acRegisterForm.style.display = 'none';
+    });
+
+    document.getElementById('acSignInBtn').addEventListener('click', () => {
+        const u = document.getElementById('acUsername').value.trim();
+        const p = document.getElementById('acPassword').value;
+        hideAcctError();
+        if (!u || !p) { showAcctError('Please fill in all fields.'); return; }
+        const accounts = getAccounts();
+        if (!accounts[u]) { showAcctError('Account not found.'); return; }
+        if (accounts[u].password !== p) { showAcctError('Wrong password.'); return; }
+        saveSession({ username: u, role: accounts[u].role, mii: accounts[u].mii });
+        acctModal.classList.remove('show');
+        updateSidebarUser();
+        updateAdminUI();
+        showToast(`Welcome back, ${u}!`, 'success');
+    });
+
+    document.getElementById('acRegisterBtn').addEventListener('click', () => {
+        const u = document.getElementById('acRegUsername').value.trim();
+        const p = document.getElementById('acRegPassword').value;
+        const c = document.getElementById('acRegConfirm').value;
+        hideAcctError();
+        if (!u || !p) { showAcctError('Please fill in all fields.'); return; }
+        if (p.length < 4) { showAcctError('Password must be 4+ characters.'); return; }
+        if (p !== c) { showAcctError('Passwords do not match.'); return; }
+        const accounts = getAccounts();
+        if (accounts[u]) { showAcctError('Username taken.'); return; }
+        const defaultMii = { face: '🙂', skin: '#fce7f3', hair: 'none', hairColor: '#f3e8ff', eyes: '●●', mouth: '😀', brows: '⌒⌒', acc: '' };
+        accounts[u] = { password: p, role: 'member', mii: defaultMii, created: Date.now() };
+        saveAccounts(accounts);
+        saveSession({ username: u, role: 'member', mii: defaultMii });
+        acctModal.classList.remove('show');
+        updateSidebarUser();
+        updateAdminUI();
+        showToast(`Account created! Welcome, ${u}!`, 'success');
+    });
+
+    // Admin Edit — show/hide edit button in game detail modal
+    function updateAdminUI() {
+        const editBtn = document.getElementById('gdAdminEdit');
+        if (editBtn) editBtn.style.display = isAdmin() ? 'block' : 'none';
+    }
+
+    // Admin edit button in game detail modal
+    const gdAdminEdit = document.getElementById('gdAdminEdit');
+    if (gdAdminEdit) {
+        gdAdminEdit.addEventListener('click', () => {
+            if (!isAdmin()) return;
+            const idx = gdAdminEdit.dataset.gameIdx;
+            const game = SHOP_GAMES[idx];
+            if (!game) return;
+            document.getElementById('geVideoUrl').value = game.videoUrl || '';
+            document.getElementById('geCoverBg').value = game.bg || '';
+            document.getElementById('geCoverEmoji').value = game.emoji || '';
+            document.getElementById('geDesc').value = game.desc || '';
+            document.getElementById('gameEditModal').classList.add('show');
+            document.getElementById('gameEditModal').dataset.gameIdx = idx;
+        });
+    }
+
+    document.getElementById('geClose')?.addEventListener('click', () => {
+        document.getElementById('gameEditModal').classList.remove('show');
+    });
+
+    document.getElementById('geSaveBtn')?.addEventListener('click', () => {
+        const idx = document.getElementById('gameEditModal').dataset.gameIdx;
+        const game = SHOP_GAMES[idx];
+        if (!game) return;
+        game.videoUrl = document.getElementById('geVideoUrl').value.trim();
+        game.bg = document.getElementById('geCoverBg').value.trim() || game.bg;
+        game.emoji = document.getElementById('geCoverEmoji').value.trim() || game.emoji;
+        game.desc = document.getElementById('geDesc').value.trim() || game.desc;
+        localStorage.setItem('aerocade_shop_edits', JSON.stringify(
+            SHOP_GAMES.map(g => ({ name: g.name, videoUrl: g.videoUrl, bg: g.bg, emoji: g.emoji, desc: g.desc }))
+        ));
+        document.getElementById('gameEditModal').classList.remove('show');
+        renderShopGrid(document.querySelector('.wiishop-cat.active')?.dataset.cat || 'all');
+        showToast('Game updated!', 'success');
+    });
+
+    // Load saved admin edits
+    (function loadShopEdits() {
+        try {
+            const saved = JSON.parse(localStorage.getItem('aerocade_shop_edits') || '[]');
+            saved.forEach(s => {
+                const g = SHOP_GAMES.find(x => x.name === s.name);
+                if (g) Object.assign(g, s);
+            });
+        } catch(e) {}
+    })();
+
+    // Expose for other modules
+    window._aeroAcct = { isAdmin, updateAdminUI, getSession };
+
+    updateSidebarUser();
+    updateAdminUI();
+}
+
+/* ==================== MII MAKER ==================== */
+function initMiiMaker() {
+    const LS_KEY = 'aerocade_accounts';
+    const SESSION_KEY = 'aerocade_session';
+
+    const FACES = ['🙂','😊','😐','😑','😏','😌','😍','🥰','😎','🤓','😇','🥳','😈','👹','🤖','👽'];
+    const SKINS = ['#fce7f3','#fde68a','#fcd34d','#fbbf24','#f59e0b','#d4a574','#b08968','#92613e','#6b4423','#4a2c0f','#ffdbb4','#e8c4a0'];
+    const HAIRS = ['none','⬛','🟫','🟤','⬛','⬛','🟫','🟧','🟤','⬛','⬜','🟥'];
+    const HAIR_COLORS = ['#f3e8ff','#fce7f3','#1e293b','#78350f','#d97706','#ef4444','#8b5cf6','#ec4899','#059669','#f43f5e'];
+    const EYES_SET = ['●●','◉◉','••','⊙⊙','👀','👁👁','😎','googly'];
+    const MOUTH_SET = ['😀','😃','😄','😁','😆','😏','😐','😋','😛','🤗','😮','🥺'];
+    const BROW_SET = ['⌒⌒','▬▬','⌃⌃','---','∧∧','╭╭','▓▓'];
+    const ACC_SET = ['','🎩','👓','✨','🎯','🎵','💫','⭐'];
+
+    let currentMii = { face: '🙂', skin: '#fce7f3', hair: 'none', hairColor: '#f3e8ff', eyes: '●●', mouth: '😀', brows: '⌒⌒', acc: '' };
+
+    const miiDisplay = document.getElementById('miiDisplay');
+    const miiHead = document.getElementById('miiHead');
+    const miiBody = document.getElementById('miiBody');
+
+    function buildRow(containerId, items, key, isColor) {
+        const row = document.getElementById(containerId);
+        if (!row) return;
+        row.innerHTML = '';
+        items.forEach(item => {
+            const btn = document.createElement('div');
+            btn.className = 'miimaker-opt' + (isColor ? ' color-opt' : '');
+            if (isColor) {
+                btn.style.background = item;
+                if (currentMii[key] === item) btn.classList.add('active');
+                btn.addEventListener('click', () => { currentMii[key] = item; renderMii(); buildRow(containerId, items, key, true); });
+            } else {
+                btn.textContent = item || '—';
+                if (currentMii[key] === item) btn.classList.add('active');
+                btn.addEventListener('click', () => { currentMii[key] = item; renderMii(); buildRow(containerId, items, key, false); });
+            }
+            row.appendChild(btn);
+        });
+    }
+
+    function renderMii() {
+        miiHead.style.background = currentMii.skin;
+        miiHead.innerHTML = `<div style="font-size:28px;line-height:1;margin-top:8px;position:relative;z-index:1;">${currentMii.eyes}</div>
+            <div style="font-size:22px;position:relative;z-index:1;">${currentMii.mouth}</div>
+            <div style="font-size:16px;position:relative;z-index:1;margin-top:-2px;">${currentMii.brows}</div>
+            <div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:14px;">${currentMii.hair === 'none' ? '' : currentMii.hair}</div>
+            <div style="position:absolute;top:4px;right:-4px;font-size:14px;">${currentMii.acc}</div>`;
+        miiBody.style.background = 'linear-gradient(180deg, #4a5568 0%, #2d3748 100%)';
+    }
+
+    function initControls() {
+        buildRow('miiFaceRow', FACES, 'face', false);
+        buildRow('miiSkinRow', SKINS, 'skin', true);
+        buildRow('miiHairRow', HAIRS, 'hair', false);
+        buildRow('miiHairColorRow', HAIR_COLORS, 'hairColor', true);
+        buildRow('miiEyesRow', EYES_SET, 'eyes', false);
+        buildRow('miiMouthRow', MOUTH_SET, 'mouth', false);
+        buildRow('miiBrowRow', BROW_SET, 'brows', false);
+        buildRow('miiAccRow', ACC_SET, 'acc', false);
+    }
+
+    function renderSavedMiis() {
+        const list = document.getElementById('miiSavedList');
+        const session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+        const accounts = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+        const names = Object.keys(accounts);
+        if (!names.length) { list.innerHTML = ''; return; }
+        let html = '<div class="miimaker-saved-title">Saved Accounts</div><div class="miimaker-saved-grid">';
+        names.forEach(name => {
+            const a = accounts[name];
+            const mii = a.mii || { face: '🙂', skin: '#fce7f3' };
+            const isActive = session?.username === name;
+            const roleLabel = a.role === 'admin' ? '★ Admin' : 'Member';
+            html += `<div class="miimaker-saved-card${isActive ? ' active' : ''}" data-user="${name}">
+                <div class="miimaker-saved-avatar" style="background:linear-gradient(135deg,${mii.skin},${mii.hairColor || '#f3e8ff'})">${mii.face}</div>
+                <div class="miimaker-saved-name">${name}</div>
+                <div class="miimaker-saved-role">${roleLabel}</div>
+                <button class="miimaker-saved-delete" data-del="${name}">&times;</button>
+            </div>`;
+        });
+        html += '</div>';
+        list.innerHTML = html;
+
+        list.querySelectorAll('.miimaker-saved-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.miimaker-saved-delete')) return;
+                const name = card.dataset.user;
+                const a = accounts[name];
+                localStorage.setItem(SESSION_KEY, JSON.stringify({ username: name, role: a.role, mii: a.mii }));
+                currentMii = { ...(a.mii || { face: '🙂', skin: '#fce7f3', hair: 'none', hairColor: '#f3e8ff', eyes: '●●', mouth: '😀', brows: '⌒⌒', acc: '' }) };
+                document.getElementById('miiNameInput').value = name;
+                renderMii();
+                initControls();
+                renderSavedMiis();
+                if (window._aeroAcct) window._aeroAcct.updateAdminUI();
+                updateSidebarUserDirect(name, a);
+                showToast(`Switched to ${name}`, 'success');
+            });
+        });
+
+        list.querySelectorAll('.miimaker-saved-delete').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const name = btn.dataset.del;
+                if (!confirm(`Delete account "${name}"?`)) return;
+                delete accounts[name];
+                localStorage.setItem(LS_KEY, JSON.stringify(accounts));
+                const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+                if (s?.username === name) localStorage.removeItem(SESSION_KEY);
+                renderSavedMiis();
+                updateSidebarUserDirect();
+                showToast(`Account "${name}" deleted.`, 'info');
+            });
+        });
+    }
+
+    function updateSidebarUserDirect(name, account) {
+        const el = document.getElementById('sidebarUser');
+        if (!name || !account) { el.style.display = 'none'; return; }
+        el.style.display = 'flex';
+        document.getElementById('sidebarUserMii').innerHTML = account.mii?.face || '🙂';
+        document.getElementById('sidebarUserMii').style.background = `linear-gradient(135deg, ${account.mii?.skin || '#fce7f3'}, ${account.mii?.hairColor || '#f3e8ff'})`;
+        document.getElementById('sidebarUserName').textContent = name;
+        const roleEl = document.getElementById('sidebarUserRole');
+        roleEl.textContent = account.role === 'admin' ? '★ Admin' : 'Member';
+        roleEl.style.color = account.role === 'admin' ? '#818cf8' : '';
+    }
+
+    document.getElementById('miiSaveBtn')?.addEventListener('click', () => {
+        const name = document.getElementById('miiNameInput').value.trim();
+        if (!name) { showToast('Enter a Mii name.', 'error'); return; }
+        const accounts = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+        const isNew = !accounts[name];
+        const role = isNew ? (Object.keys(accounts).length === 0 ? 'admin' : 'member') : accounts[name].role;
+        accounts[name] = { password: accounts[name]?.password || 'mii', role, mii: { ...currentMii } };
+        localStorage.setItem(LS_KEY, JSON.stringify(accounts));
+        localStorage.setItem(SESSION_KEY, JSON.stringify({ username: name, role, mii: { ...currentMii } }));
+        renderSavedMiis();
+        updateSidebarUserDirect(name, accounts[name]);
+        if (window._aeroAcct) window._aeroAcct.updateAdminUI();
+        showToast(isNew ? `Mii "${name}" created! (First account = Admin)` : `Mii "${name}" updated!`, 'success');
+    });
+
+    document.getElementById('miiRandomBtn')?.addEventListener('click', () => {
+        const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+        currentMii = {
+            face: pick(FACES), skin: pick(SKINS), hair: pick(HAIRS),
+            hairColor: pick(HAIR_COLORS), eyes: pick(EYES_SET),
+            mouth: pick(MOUTH_SET), brows: pick(BROW_SET), acc: pick(ACC_SET)
+        };
+        renderMii();
+        initControls();
+        showToast('Random Mii generated!', 'info');
+    });
+
+    renderMii();
+    initControls();
+    renderSavedMiis();
+}
