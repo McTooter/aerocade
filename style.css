@@ -2694,6 +2694,52 @@ body {
     border-color: var(--accent); color: var(--accent); background: var(--accent-light);
 }
 
+/* ==================== MII IDLE ANIMATION ==================== */
+.profile-mii-svg {
+    perspective: 600px;
+}
+.profile-mii-svg img {
+    animation: miiIdle 3s ease-in-out infinite;
+}
+@keyframes miiIdle {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-3px) rotate(0.5deg); }
+    50% { transform: translateY(-5px) rotate(0deg); }
+    75% { transform: translateY(-3px) rotate(-0.5deg); }
+}
+.profile-saved-mini img {
+    animation: miiIdleMini 3.5s ease-in-out infinite;
+}
+@keyframes miiIdleMini {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+}
+
+/* Mii hover sparkle effect */
+.profile-mii-svg:hover img,
+.profile-saved-mini:hover img {
+    filter: drop-shadow(0 0 12px rgba(66,165,245,0.5));
+    transition: filter 0.3s ease;
+}
+
+/* Wii-style channel glow on Wii Shop cards */
+.wiishop-card {
+    transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease;
+}
+.wiishop-card:hover {
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 12px 40px rgba(66,165,245,0.25), 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Console card Wii-style hover */
+.console-card {
+    transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease;
+}
+.console-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+}
+
 /* ==================== WII SHOP LOADING SCREEN ==================== */
 .loading-screen {
     position: fixed; inset: 0; z-index: 99998;
@@ -2720,37 +2766,41 @@ body {
 .loading-tile--1 {
     width: 120px; height: 120px; top: 8%; left: 5%;
     background: linear-gradient(135deg, #42a5f5, #1e88e5);
-    animation-delay: 0s; animation-duration: 9s;
+    animation: tileWave 9s ease-in-out 0s infinite, tileFloat 9s ease-in-out 0s infinite;
 }
 .loading-tile--2 {
     width: 90px; height: 90px; top: 15%; right: 12%;
     background: linear-gradient(135deg, #66bb6a, #43a047);
-    animation-delay: -2s; animation-duration: 7s;
+    animation: tileWave 9s ease-in-out 0.15s infinite, tileFloat 7s ease-in-out -2s infinite;
 }
 .loading-tile--3 {
     width: 140px; height: 140px; bottom: 12%; left: 10%;
     background: linear-gradient(135deg, #ffa726, #f57c00);
-    animation-delay: -4s; animation-duration: 11s;
+    animation: tileWave 9s ease-in-out 0.3s infinite, tileFloat 11s ease-in-out -4s infinite;
 }
 .loading-tile--4 {
     width: 80px; height: 80px; bottom: 20%; right: 8%;
     background: linear-gradient(135deg, #ab47bc, #8e24aa);
-    animation-delay: -1s; animation-duration: 8s;
+    animation: tileWave 9s ease-in-out 0.45s infinite, tileFloat 8s ease-in-out -1s infinite;
 }
 .loading-tile--5 {
     width: 100px; height: 100px; top: 45%; left: 2%;
     background: linear-gradient(135deg, #ef5350, #e53935);
-    animation-delay: -3s; animation-duration: 10s;
+    animation: tileWave 9s ease-in-out 0.6s infinite, tileFloat 10s ease-in-out -3s infinite;
 }
 .loading-tile--6 {
     width: 110px; height: 110px; top: 30%; right: 3%;
     background: linear-gradient(135deg, #29b6f6, #0288d1);
-    animation-delay: -5s; animation-duration: 12s;
+    animation: tileWave 9s ease-in-out 0.75s infinite, tileFloat 12s ease-in-out -5s infinite;
+}
+@keyframes tileWave {
+    0%, 100% { opacity: 0.08; transform: scale(0.9); }
+    50% { opacity: 0.18; transform: scale(1.08); }
 }
 @keyframes tileFloat {
-    0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
-    33% { transform: translateY(-18px) rotate(3deg) scale(1.04); }
-    66% { transform: translateY(12px) rotate(-2deg) scale(0.97); }
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    33% { transform: translateY(-18px) rotate(3deg); }
+    66% { transform: translateY(12px) rotate(-2deg); }
 }
 
 .loading-inner {

@@ -97,7 +97,7 @@
             'radial-gradient(circle at 30% 30%, rgba(236,72,153,0.12) 0%, rgba(236,72,153,0.02) 60%, transparent 100%)',
             'radial-gradient(circle at 30% 30%, rgba(6,182,212,0.15) 0%, rgba(6,182,212,0.03) 60%, transparent 100%)',
         ];
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < 5; i++) {
             const b = document.createElement('div');
             b.className = 'bubble';
             const size = 18 + Math.random() * 50;
@@ -320,8 +320,8 @@
         });
 
         document.addEventListener('mousedown', e => {
-            cursor.style.transform = 'translate(-6px,-2px) scale(0.85)';
-            setTimeout(() => { cursor.style.transform = 'translate(-6px,-2px) scale(1)'; }, 120);
+            cursor.style.transform = 'scale(0.88)';
+            setTimeout(() => { cursor.style.transform = 'scale(1)'; }, 120);
             const burst = document.createElement('div');
             burst.className = 'click-burst';
             burst.style.left = (e.clientX - 60) + 'px';
@@ -417,7 +417,7 @@
     function createSparkles() {
         const container = $('#sparkleContainer');
         if (!container) return;
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 4; i++) {
             const s = document.createElement('div');
             s.className = 'sparkle';
             const size = 6 + Math.random() * 8;
@@ -435,7 +435,7 @@
     function createStars() {
         const container = $('#starContainer');
         if (!container) return;
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < 5; i++) {
             const star = document.createElement('div');
             star.className = 'star';
             const size = 6 + Math.random() * 10;
