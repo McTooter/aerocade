@@ -1338,7 +1338,6 @@
     showToast('Welcome! Load a ROM to begin.', 'info');
     initAccountSystem();
     initMiiMaker();
-})();
 
 /* ==================== ACCOUNT SYSTEM ==================== */
 function initAccountSystem() {
@@ -1511,14 +1510,13 @@ function initAccountSystem() {
     updateAdminUI();
 }
 
-/* ==================== MII MAKER ==================== */
 function initMiiMaker() {
     const LS_KEY = 'aerocade_accounts';
     const SESSION_KEY = 'aerocade_session';
 
     const FACES = ['🙂','😊','😐','😑','😏','😌','😍','🥰','😎','🤓','😇','🥳','😈','👹','🤖','👽'];
     const SKINS = ['#fce7f3','#fde68a','#fcd34d','#fbbf24','#f59e0b','#d4a574','#b08968','#92613e','#6b4423','#4a2c0f','#ffdbb4','#e8c4a0'];
-    const HAIRS = ['none','⬛','🟫','🟤','⬛','⬛','🟫','🟧','🟤','⬛','⬜','🟥'];
+    const HAIRS = ['none','⬛','🟫','🟤','🟧','⬜','🟥','🧑‍🦱','👩‍🦰','🧑‍🦳','👴','👱'];
     const HAIR_COLORS = ['#f3e8ff','#fce7f3','#1e293b','#78350f','#d97706','#ef4444','#8b5cf6','#ec4899','#059669','#f43f5e'];
     const EYES_SET = ['●●','◉◉','••','⊙⊙','👀','👁','😎','googly'];
     const NOSE_SET = ['•','△','▽','○','鼻','∘','¬'];
@@ -1602,7 +1600,7 @@ function initMiiMaker() {
         buildRow('miiGlassesRow', GLASSES_SET, 'glasses', false);
         buildRow('miiHatRow', HAT_SET, 'hat', false);
         buildRow('miiShirtRow', SHIRT_COLORS, 'shirtColor', true);
-        buildRow('miiBodyRow', BODY_TYPES.map(t => t.charAt(0).toUpperCase() + t.slice(1)), 'bodyType', false);
+        buildRow('miiBodyRow', BODY_TYPES, 'bodyType', false);
         buildRow('miiAccRow', ACC_SET, 'acc', false);
     }
 
@@ -1708,3 +1706,4 @@ function initMiiMaker() {
     initControls();
     renderSavedMiis();
 }
+})();
