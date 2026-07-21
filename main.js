@@ -1776,7 +1776,7 @@ function initProfile() {
     }
 
     // === Account System (jsonbin.io admin sync + localStorage) ===
-    const ADMIN_NAME = 'McTooter';
+    const ADMIN_NAME = 'Zant';
     const JSONBIN_KEY = '$2a$10$i3xGZbqAs5UpGSQXldRSXOB5Q60hXiHvvaqXyrC/UZ0WoR8KkbTiC';
     const JSONBIN_ID = '6a5fa6a1da38895dfe7bec5a';
 
@@ -1816,7 +1816,7 @@ function initProfile() {
         accounts[name] = data;
         localStorage.setItem(LS_KEY, JSON.stringify(accounts));
         if (name === ADMIN_NAME && JSONBIN_KEY && JSONBIN_ID) {
-            await jsonbinSet({ [ADMIN_NAME]: data });
+                await jsonbinSet({ [ADMIN_NAME]: data });
         }
     }
 
