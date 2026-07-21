@@ -1775,17 +1775,38 @@ function initProfile() {
         showToast('Random Mii generated!', 'info');
     }
 
-    // === Account System (Firestore admin sync + localStorage) ===
+    // === Account System (jsonbin.io admin sync + localStorage) ===
     const ADMIN_NAME = 'McTooter';
-    const usesFirebase = () => window._fbReady === true;
+    const JSONBIN_KEY = '';
+    const JSONBIN_ID = '';
+
+    async function jsonbinGet() {
+        if (!JSONBIN_KEY || !JSONBIN_ID) return null;
+        try {
+            const r = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, {
+                headers: { 'X-Master-Key': JSONBIN_KEY }
+            });
+            const j = await r.json();
+            return j.record;
+        } catch (e) { console.warn('jsonbin read failed:', e); return null; }
+    }
+
+    async function jsonbinSet(data) {
+        if (!JSONBIN_KEY || !JSONBIN_ID) return;
+        try {
+            await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}`, {
+                method: 'PUT',
+                headers: { 'X-Master-Key': JSONBIN_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        } catch (e) { console.warn('jsonbin write failed:', e); }
+    }
 
     async function getAccounts() {
         const local = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-        if (usesFirebase()) {
-            try {
-                const doc = await window._fbDB.collection('aerocade_admin').doc(ADMIN_NAME).get();
-                if (doc.exists) local[ADMIN_NAME] = doc.data();
-            } catch (e) { console.warn('Firestore read failed:', e); }
+        if (JSONBIN_KEY && JSONBIN_ID) {
+            const remote = await jsonbinGet();
+            if (remote && remote[ADMIN_NAME]) local[ADMIN_NAME] = remote[ADMIN_NAME];
         }
         return local;
     }
@@ -1794,8 +1815,8 @@ function initProfile() {
         const accounts = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
         accounts[name] = data;
         localStorage.setItem(LS_KEY, JSON.stringify(accounts));
-        if (name === ADMIN_NAME && usesFirebase()) {
-            try { await window._fbDB.collection('aerocade_admin').doc(ADMIN_NAME).set(data); } catch (e) { console.warn('Firestore write failed:', e); }
+        if (name === ADMIN_NAME && JSONBIN_KEY && JSONBIN_ID) {
+            await jsonbinSet({ [ADMIN_NAME]: data });
         }
     }
 
@@ -1803,8 +1824,8 @@ function initProfile() {
         const accounts = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
         delete accounts[name];
         localStorage.setItem(LS_KEY, JSON.stringify(accounts));
-        if (name === ADMIN_NAME && usesFirebase()) {
-            try { await window._fbDB.collection('aerocade_admin').doc(ADMIN_NAME).delete(); } catch (e) { console.warn('Firestore delete failed:', e); }
+        if (name === ADMIN_NAME && JSONBIN_KEY && JSONBIN_ID) {
+            await jsonbinSet({ [ADMIN_NAME]: null });
         }
     }
 
@@ -2066,17 +2087,15 @@ function initProfile() {
 
     window._aeroAcct = { isAdmin, updateAdminUI, getSession };
 
-    // === Load admin Mii from Firestore on startup ===
-    if (usesFirebase()) {
+    // === Load admin Mii from jsonbin on startup ===
+    if (JSONBIN_KEY && JSONBIN_ID) {
         (async () => {
-            try {
-                const doc = await window._fbDB.collection('aerocade_admin').doc(ADMIN_NAME).get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    saveSession({ username: ADMIN_NAME, role: 'admin', miiStudio: data.miiStudio });
-                    renderSavedAccounts('profileSavedGridBottom');
-                }
-            } catch (e) { console.warn('Firestore admin load failed:', e); }
+            const remote = await jsonbinGet();
+            if (remote && remote[ADMIN_NAME]) {
+                const data = remote[ADMIN_NAME];
+                saveSession({ username: ADMIN_NAME, role: 'admin', miiStudio: data.miiStudio });
+                renderSavedAccounts('profileSavedGridBottom');
+            }
         })();
     }
 
