@@ -27,17 +27,30 @@
 
 <!-- Wii Shop Loading Screen -->
 <div id="loadingScreen" class="loading-screen">
+    <div class="loading-channel-tiles">
+        <div class="loading-tile loading-tile--1"></div>
+        <div class="loading-tile loading-tile--2"></div>
+        <div class="loading-tile loading-tile--3"></div>
+        <div class="loading-tile loading-tile--4"></div>
+        <div class="loading-tile loading-tile--5"></div>
+        <div class="loading-tile loading-tile--6"></div>
+    </div>
     <div class="loading-inner">
         <div class="loading-globe-wrap">
             <div class="loading-globe">
+                <div class="loading-globe-core"></div>
                 <div class="loading-globe-ring loading-globe-ring--1"></div>
                 <div class="loading-globe-ring loading-globe-ring--2"></div>
                 <div class="loading-globe-ring loading-globe-ring--3"></div>
-                <div class="loading-globe-core"></div>
+                <div class="loading-globe-dot loading-globe-dot--1"></div>
+                <div class="loading-globe-dot loading-globe-dot--2"></div>
+                <div class="loading-globe-dot loading-globe-dot--3"></div>
             </div>
         </div>
-        <div class="loading-title">SUMEE!</div>
-        <div class="loading-subtitle">Loading...</div>
+        <div class="loading-logo">
+            <span class="loading-logo-s">S</span><span class="loading-logo-rest">UMEE!</span>
+        </div>
+        <div class="loading-subtitle">Wii Shop Channel</div>
         <div class="loading-bar-track">
             <div class="loading-bar-fill" id="loadingBarFill"></div>
         </div>
@@ -414,8 +427,11 @@
                             <button class="profile-tab active" data-tab="face">Face</button>
                             <button class="profile-tab" data-tab="hair">Hair</button>
                             <button class="profile-tab" data-tab="eyes">Eyes</button>
-                            <button class="profile-tab" data-tab="features">Features</button>
-                            <button class="profile-tab" data-tab="style">Style</button>
+                            <button class="profile-tab" data-tab="brows">Brows</button>
+                            <button class="profile-tab" data-tab="nose">Nose</button>
+                            <button class="profile-tab" data-tab="mouth">Mouth</button>
+                            <button class="profile-tab" data-tab="accessories">Extras</button>
+                            <button class="profile-tab" data-tab="color">Color</button>
                         </div>
                         <div class="profile-panels" id="profilePanels"></div>
                     </div>

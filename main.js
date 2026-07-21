@@ -1207,13 +1207,19 @@
 
         let videoHtml = '';
         if (g.videoUrl) {
-            let embedUrl = g.videoUrl;
-            if (g.videoUrl.includes('youtu.be/')) {
-                embedUrl = g.videoUrl.replace('youtu.be/', 'youtube.com/embed/');
-            } else if (g.videoUrl.includes('youtube.com/watch')) {
-                embedUrl = g.videoUrl.replace('watch?v=', 'embed/');
+            let embedUrl = '';
+            const url = g.videoUrl.trim();
+            const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?.*?v=|embed\/|v\/)|youtu\.be\/)([\w-]{11})/);
+            if (ytMatch) {
+                embedUrl = 'https://www.youtube.com/embed/' + ytMatch[1] + '?rel=0&modestbranding=1';
+            } else if (url.includes('player.vimeo.com/video/')) {
+                embedUrl = url;
+            } else {
+                embedUrl = url;
             }
-            videoHtml = `<div class="gd-video-wrap"><iframe src="${embedUrl}" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe></div>`;
+            if (embedUrl) {
+                videoHtml = `<div class="gd-video-wrap"><iframe src="${embedUrl}" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe></div>`;
+            }
         } else {
             videoHtml = `<div class="gd-video-placeholder">
                 <div class="gd-video-icon">\u{1F3AC}</div>
@@ -1459,91 +1465,128 @@ function initProfile() {
     const FH_MAP = [0,3,2,1];
     const FAV_MAP = [0,1,2,3,4,5,6,7,8,9,10,11];
 
-    let currentStudioData = null; // Uint8Array of 46 bytes
+    let currentStudioData = null;
     let activeTab = 'face';
 
     const TAB_ITEMS = {
         face: [
             { label: 'Face Shape', key: 'faceType', items: FACE_TYPES },
-            { label: 'Skin', key: 'skinColor', items: SKIN_COLORS }
+            { label: 'Skin', key: 'skinColor', items: SKIN_COLORS },
+            { label: 'Makeup', key: 'faceMakeup', items: ['None','Light','Rosy','Heavy','Natural'] },
+            { label: 'Wrinkles', key: 'faceWrinkles', items: ['None','Light','Medium','Heavy','Old'] },
+            { label: 'Gender', key: 'gender', items: ['Male','Female'] },
+            { slider: true, label: 'Height', key: 'height', min: 0, max: 127, icon: '&#8693;' },
+            { slider: true, label: 'Build', key: 'weight', min: 0, max: 127, icon: '&#9644;' },
         ],
         hair: [
             { label: 'Style', key: 'hairStyle', items: HAIR_STYLES },
-            { label: 'Color', key: 'hairColor', items: HAIR_COLORS }
+            { label: 'Color', key: 'hairColor', items: HAIR_COLORS },
+            { label: 'Flip', key: 'hairFlip', items: ['Normal','Flipped'] },
         ],
         eyes: [
             { label: 'Shape', key: 'eyeStyle', items: EYE_STYLES },
-            { label: 'Color', key: 'eyeColor', items: EYE_COLORS }
+            { label: 'Color', key: 'eyeColor', items: EYE_COLORS },
+            { slider: true, label: 'Size', key: 'eyeSize', min: 0, max: 7, icon: '&#9673;' },
+            { slider: true, label: 'Stretch', key: 'eyeStretch', min: 0, max: 6, icon: '&#8691;' },
+            { slider: true, label: 'Rotation', key: 'eyeRotation', min: 0, max: 7, icon: '&#8635;' },
+            { slider: true, label: 'Horizontal', key: 'eyePosX', min: 0, max: 12, icon: '&#8596;' },
+            { slider: true, label: 'Vertical', key: 'eyePosY', min: 0, max: 18, icon: '&#8597;' },
         ],
-        features: [
-            { label: 'Nose', key: 'noseStyle', items: NOSE_STYLES },
-            { label: 'Mouth', key: 'mouthStyle', items: MOUTH_STYLES },
-            { label: 'Brows', key: 'browStyle', items: BROW_STYLES },
-            { label: 'Glasses', key: 'glassesStyle', items: GLASSES_STYLES }
+        brows: [
+            { label: 'Shape', key: 'browStyle', items: BROW_STYLES },
+            { slider: true, label: 'Size', key: 'browSize', min: 0, max: 8, icon: '&#9673;' },
+            { slider: true, label: 'Stretch', key: 'browStretch', min: 0, max: 6, icon: '&#8691;' },
+            { slider: true, label: 'Rotation', key: 'browRotation', min: 0, max: 11, icon: '&#8635;' },
+            { slider: true, label: 'Horizontal', key: 'browPosX', min: 0, max: 12, icon: '&#8596;' },
+            { slider: true, label: 'Vertical', key: 'browPosY', min: 0, max: 18, icon: '&#8597;' },
         ],
-        style: [
+        nose: [
+            { label: 'Shape', key: 'noseStyle', items: NOSE_STYLES },
+            { slider: true, label: 'Size', key: 'noseSize', min: 0, max: 8, icon: '&#9673;' },
+            { slider: true, label: 'Vertical', key: 'nosePosY', min: 0, max: 18, icon: '&#8597;' },
+        ],
+        mouth: [
+            { label: 'Shape', key: 'mouthStyle', items: MOUTH_STYLES },
+            { slider: true, label: 'Size', key: 'mouthSize', min: 0, max: 8, icon: '&#9673;' },
+            { slider: true, label: 'Stretch', key: 'mouthStretch', min: 0, max: 6, icon: '&#8691;' },
+            { slider: true, label: 'Vertical', key: 'mouthPosY', min: 0, max: 18, icon: '&#8597;' },
+        ],
+        accessories: [
+            { label: 'Glasses', key: 'glassesStyle', items: GLASSES_STYLES },
             { label: 'Facial Hair', key: 'facialHair', items: FACIAL_HAIR_STYLES },
-            { label: 'Favorite Color', key: 'favColor', items: FAV_COLORS }
-        ]
+            { label: 'Mole', key: 'moleEnable', items: ['Off','On'] },
+            { slider: true, label: 'Glasses Size', key: 'glassesSize', min: 0, max: 7, icon: '&#9673;' },
+            { slider: true, label: 'Glasses Height', key: 'glassesPosY', min: 0, max: 20, icon: '&#8597;' },
+            { slider: true, label: 'Mole Size', key: 'moleSize', min: 0, max: 8, icon: '&#9673;' },
+            { slider: true, label: 'Mole X', key: 'molePosX', min: 0, max: 16, icon: '&#8596;' },
+            { slider: true, label: 'Mole Y', key: 'molePosY', min: 0, max: 30, icon: '&#8597;' },
+        ],
+        color: [
+            { label: 'Favorite', key: 'favColor', items: FAV_COLORS },
+        ],
     };
 
-    // Current editor state (indexes into the option arrays)
     let editorState = {
-        faceType: 0, skinColor: 0, hairStyle: 1, hairColor: 0,
-        eyeStyle: 0, eyeColor: 0, noseStyle: 0, mouthStyle: 0,
-        browStyle: 0, glassesStyle: 0, facialHair: 0, favColor: 4,
-        gender: 0, height: 64, weight: 64
+        faceType: 0, skinColor: 0, faceMakeup: 0, faceWrinkles: 0, gender: 0,
+        hairStyle: 1, hairColor: 0, hairFlip: 0,
+        eyeStyle: 0, eyeColor: 0, eyeSize: 4, eyeStretch: 3, eyeRotation: 4, eyePosX: 6, eyePosY: 10,
+        browStyle: 0, browSize: 4, browStretch: 3, browRotation: 6, browPosX: 6, browPosY: 10,
+        noseStyle: 0, noseSize: 4, nosePosY: 13,
+        mouthStyle: 0, mouthSize: 4, mouthStretch: 3, mouthPosY: 13,
+        glassesStyle: 0, glassesSize: 4, glassesPosY: 10,
+        facialHair: 0, moleEnable: 0, moleSize: 1, molePosX: 15, molePosY: 20,
+        favColor: 4, height: 64, weight: 64
     };
 
     // === Mii Studio Encoding ===
     function buildStudioData() {
         const d = new Uint8Array(46);
-        d[0] = HAIR_COL_MAP[editorState.hairColor] || 0x04; // facial_hair_color (matches hair)
-        d[1] = editorState.facialHair > 0 ? (editorState.facialHair === 1 ? 3 : editorState.facialHair === 2 ? 1 : 2) : 0; // beard_goatee
-        d[2] = editorState.weight; // body_weight
-        d[3] = 3; // eye_stretch (default)
-        d[4] = EYE_COL_MAP[editorState.eyeColor] || 0x01; // eye_color
-        d[5] = 4; // eye_rotation
-        d[6] = 4; // eye_size
-        d[7] = EYE_MAP[editorState.eyeStyle] || 27; // eye_type
-        d[8] = 6; // eye_horizontal (center)
-        d[9] = 10; // eye_vertical
-        d[10] = 3; // eyebrow_stretch
-        d[11] = HAIR_COL_MAP[editorState.hairColor] || 0x04; // eyebrow_color
-        d[12] = 6; // eyebrow_rotation
-        d[13] = 4; // eyebrow_size
-        d[14] = BROW_MAP[editorState.browStyle] || 0; // eyebrow_type
-        d[15] = 6; // eyebrow_horizontal
-        d[16] = 10; // eyebrow_vertical
-        d[17] = SKIN_MAP[editorState.skinColor] || 3; // face_color
-        d[18] = 0; // face_makeup
-        d[19] = FACE_MAP[editorState.faceType] || 0; // face_type
-        d[20] = 0; // face_wrinkles
-        d[21] = FAV_MAP[editorState.favColor] || 4; // favorite_color
-        d[22] = editorState.gender; // gender
-        d[23] = 0; // glasses_color
-        d[24] = 4; // glasses_size
-        d[25] = GLASSES_MAP[editorState.glassesStyle] || 0; // glasses_type
-        d[26] = 10; // glasses_vertical
-        d[27] = HAIR_COL_MAP[editorState.hairColor] || 0x04; // hair_color
-        d[28] = 0; // hair_flip
-        d[29] = HAIR_MAP[editorState.hairStyle] || 73; // hair_type
-        d[30] = editorState.height; // body_height
-        d[31] = 1; // mole_size
-        d[32] = 0; // mole_enable
-        d[33] = 15; // mole_horizontal
-        d[34] = 20; // mole_vertical
-        d[35] = 3; // mouth_stretch
-        d[36] = 0x0c; // mouth_color
-        d[37] = 4; // mouth_size
-        d[38] = MOUTH_MAP[editorState.mouthStyle] || 23; // mouth_type
-        d[39] = 13; // mouth_vertical
-        d[40] = 4; // beard_size
-        d[41] = editorState.facialHair === 2 ? 3 : (editorState.facialHair === 3 ? 1 : 0); // beard_mustache
-        d[42] = 8; // beard_vertical
-        d[43] = 4; // nose_size
-        d[44] = NOSE_MAP[editorState.noseStyle] || 10; // nose_type
-        d[45] = 13; // nose_vertical
+        d[0] = HAIR_COL_MAP[editorState.hairColor] || 0x04;
+        d[1] = editorState.facialHair > 0 ? (editorState.facialHair === 1 ? 3 : editorState.facialHair === 2 ? 1 : 2) : 0;
+        d[2] = editorState.weight;
+        d[3] = editorState.eyeStretch;
+        d[4] = EYE_COL_MAP[editorState.eyeColor] || 0x01;
+        d[5] = editorState.eyeRotation;
+        d[6] = editorState.eyeSize;
+        d[7] = EYE_MAP[editorState.eyeStyle] || 27;
+        d[8] = editorState.eyePosX;
+        d[9] = editorState.eyePosY;
+        d[10] = editorState.browStretch;
+        d[11] = HAIR_COL_MAP[editorState.hairColor] || 0x04;
+        d[12] = editorState.browRotation;
+        d[13] = editorState.browSize;
+        d[14] = BROW_MAP[editorState.browStyle] || 0;
+        d[15] = editorState.browPosX;
+        d[16] = editorState.browPosY;
+        d[17] = SKIN_MAP[editorState.skinColor] || 3;
+        d[18] = editorState.faceMakeup;
+        d[19] = FACE_MAP[editorState.faceType] || 0;
+        d[20] = editorState.faceWrinkles;
+        d[21] = FAV_MAP[editorState.favColor] || 4;
+        d[22] = editorState.gender;
+        d[23] = 0;
+        d[24] = editorState.glassesSize;
+        d[25] = GLASSES_MAP[editorState.glassesStyle] || 0;
+        d[26] = editorState.glassesPosY;
+        d[27] = HAIR_COL_MAP[editorState.hairColor] || 0x04;
+        d[28] = editorState.hairFlip;
+        d[29] = HAIR_MAP[editorState.hairStyle] || 73;
+        d[30] = editorState.height;
+        d[31] = editorState.moleSize;
+        d[32] = editorState.moleEnable;
+        d[33] = editorState.molePosX;
+        d[34] = editorState.molePosY;
+        d[35] = editorState.mouthStretch;
+        d[36] = 0x0c;
+        d[37] = editorState.mouthSize;
+        d[38] = MOUTH_MAP[editorState.mouthStyle] || 23;
+        d[39] = editorState.mouthPosY;
+        d[40] = 4;
+        d[41] = editorState.facialHair === 2 ? 3 : (editorState.facialHair === 3 ? 1 : 0);
+        d[42] = 8;
+        d[43] = editorState.noseSize;
+        d[44] = NOSE_MAP[editorState.noseStyle] || 10;
+        d[45] = editorState.nosePosY;
         return d;
     }
 
@@ -1589,9 +1632,7 @@ function initProfile() {
     }
 
     function editorStateFromStudioData(data) {
-        // Reverse-map from studio bytes to editor indexes
         const state = { ...editorState };
-        // Find closest match for key values
         const findClosest = (arr, val) => {
             let best = 0, bestDist = 999;
             arr.forEach((v, i) => { const d = Math.abs(v - val); if (d < bestDist) { bestDist = d; best = i; } });
@@ -1611,6 +1652,30 @@ function initProfile() {
         state.gender = data[22];
         state.height = data[30];
         state.weight = data[2];
+        state.eyeSize = data[6];
+        state.eyeStretch = data[3];
+        state.eyeRotation = data[5];
+        state.eyePosX = data[8];
+        state.eyePosY = data[9];
+        state.browSize = data[13];
+        state.browStretch = data[10];
+        state.browRotation = data[12];
+        state.browPosX = data[15];
+        state.browPosY = data[16];
+        state.noseSize = data[43];
+        state.nosePosY = data[45];
+        state.mouthSize = data[37];
+        state.mouthStretch = data[35];
+        state.mouthPosY = data[39];
+        state.glassesSize = data[24];
+        state.glassesPosY = data[26];
+        state.hairFlip = data[28];
+        state.faceMakeup = data[18];
+        state.faceWrinkles = data[20];
+        state.moleEnable = data[32];
+        state.moleSize = data[31];
+        state.molePosX = data[33];
+        state.molePosY = data[34];
         return state;
     }
 
@@ -1622,21 +1687,44 @@ function initProfile() {
     }
 
     function randomizeMii() {
-        const pick = arr => arr[Math.floor(Math.random() * arr.length)];
         editorState = {
             faceType: Math.floor(Math.random() * FACE_TYPES.length),
             skinColor: Math.floor(Math.random() * SKIN_COLORS.length),
+            faceMakeup: Math.random() > 0.7 ? Math.floor(Math.random() * 5) : 0,
+            faceWrinkles: Math.random() > 0.8 ? Math.floor(Math.random() * 5) : 0,
+            gender: Math.random() > 0.5 ? 1 : 0,
             hairStyle: 1 + Math.floor(Math.random() * (HAIR_STYLES.length - 1)),
             hairColor: Math.floor(Math.random() * HAIR_COLORS.length),
+            hairFlip: Math.random() > 0.8 ? 1 : 0,
             eyeStyle: Math.floor(Math.random() * EYE_STYLES.length),
             eyeColor: Math.floor(Math.random() * EYE_COLORS.length),
-            noseStyle: Math.floor(Math.random() * NOSE_STYLES.length),
-            mouthStyle: Math.floor(Math.random() * MOUTH_STYLES.length),
+            eyeSize: 2 + Math.floor(Math.random() * 4),
+            eyeStretch: Math.floor(Math.random() * 7),
+            eyeRotation: 2 + Math.floor(Math.random() * 4),
+            eyePosX: 4 + Math.floor(Math.random() * 5),
+            eyePosY: 7 + Math.floor(Math.random() * 6),
             browStyle: Math.floor(Math.random() * BROW_STYLES.length),
-            glassesStyle: Math.random() > 0.8 ? Math.floor(Math.random() * (GLASSES_STYLES.length - 1)) + 1 : 0,
-            facialHair: Math.random() > 0.85 ? Math.floor(Math.random() * (FACIAL_HAIR_STYLES.length - 1)) + 1 : 0,
+            browSize: 2 + Math.floor(Math.random() * 5),
+            browStretch: Math.floor(Math.random() * 7),
+            browRotation: 3 + Math.floor(Math.random() * 6),
+            browPosX: 4 + Math.floor(Math.random() * 5),
+            browPosY: 7 + Math.floor(Math.random() * 6),
+            noseStyle: Math.floor(Math.random() * NOSE_STYLES.length),
+            noseSize: 2 + Math.floor(Math.random() * 5),
+            nosePosY: 10 + Math.floor(Math.random() * 6),
+            mouthStyle: Math.floor(Math.random() * MOUTH_STYLES.length),
+            mouthSize: 2 + Math.floor(Math.random() * 5),
+            mouthStretch: Math.floor(Math.random() * 7),
+            mouthPosY: 10 + Math.floor(Math.random() * 6),
+            glassesStyle: Math.random() > 0.8 ? 1 + Math.floor(Math.random() * 4) : 0,
+            glassesSize: 3 + Math.floor(Math.random() * 4),
+            glassesPosY: 7 + Math.floor(Math.random() * 7),
+            facialHair: Math.random() > 0.85 ? 1 + Math.floor(Math.random() * 3) : 0,
+            moleEnable: Math.random() > 0.8 ? 1 : 0,
+            moleSize: 1 + Math.floor(Math.random() * 6),
+            molePosX: 8 + Math.floor(Math.random() * 8),
+            molePosY: 12 + Math.floor(Math.random() * 12),
             favColor: Math.floor(Math.random() * FAV_COLORS.length),
-            gender: Math.random() > 0.5 ? 1 : 0,
             height: 48 + Math.floor(Math.random() * 40),
             weight: 40 + Math.floor(Math.random() * 50)
         };
@@ -1698,13 +1786,24 @@ function initProfile() {
         const defs = TAB_ITEMS[activeTab] || [];
         let html = '';
         defs.forEach(def => {
-            html += `<div class="profile-panel-section"><div class="profile-panel-label">${def.label}</div><div class="profile-panel-row">`;
-            def.items.forEach((item, idx) => {
+            if (def.slider) {
                 const val = editorState[def.key];
-                const isActive = val === idx;
-                html += `<div class="profile-chip${isActive ? ' active' : ''}" data-key="${def.key}" data-val="${idx}">${item}</div>`;
-            });
-            html += '</div></div>';
+                const pct = ((val - def.min) / (def.max - def.min)) * 100;
+                html += `<div class="profile-panel-section">
+                    <div class="profile-panel-label"><span class="slider-icon">${def.icon || ''}</span>${def.label} <span class="slider-val" id="sv_${def.key}">${val}</span></div>
+                    <div class="profile-slider-row">
+                        <input type="range" class="profile-slider" min="${def.min}" max="${def.max}" value="${val}" data-key="${def.key}" style="--fill:${pct}%">
+                    </div>
+                </div>`;
+            } else {
+                html += `<div class="profile-panel-section"><div class="profile-panel-label">${def.label}</div><div class="profile-panel-row">`;
+                def.items.forEach((item, idx) => {
+                    const val = editorState[def.key];
+                    const isActive = val === idx;
+                    html += `<div class="profile-chip${isActive ? ' active' : ''}" data-key="${def.key}" data-val="${idx}">${item}</div>`;
+                });
+                html += '</div></div>';
+            }
         });
         panels.innerHTML = html;
 
@@ -1715,6 +1814,21 @@ function initProfile() {
                 renderStage();
                 renderPanels();
             });
+        });
+
+        panels.querySelectorAll('.profile-slider').forEach(el => {
+            const update = () => {
+                const key = el.dataset.key;
+                const val = parseInt(el.value);
+                editorState[key] = val;
+                const pct = ((val - parseInt(el.min)) / (parseInt(el.max) - parseInt(el.min))) * 100;
+                el.style.setProperty('--fill', pct + '%');
+                const sv = document.getElementById('sv_' + key);
+                if (sv) sv.textContent = val;
+                currentStudioData = buildStudioData();
+                renderStage();
+            };
+            el.addEventListener('input', update);
         });
     }
 
