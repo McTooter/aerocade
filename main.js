@@ -273,6 +273,7 @@
 
     // ==================== WII CURSOR ====================
     function initWiiCursor() {
+        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
         const cursor = $('#wiiCursor');
         if (!cursor) return;
         let mx = -100, my = -100;
@@ -1774,12 +1775,59 @@ function initProfile() {
         showToast('Random Mii generated!', 'info');
     }
 
-    // === Auth/Account System ===
-    function getAccounts() { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }
-    function saveAccounts(a) { localStorage.setItem(LS_KEY, JSON.stringify(a)); }
-    function getSession() { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
-    function saveSession(s) { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
-    function clearSession() { localStorage.removeItem(SESSION_KEY); }
+    // === Auth/Account System (Firebase + localStorage fallback) ===
+    const usesFirebase = () => window._fbReady === true;
+
+    async function getAccounts() {
+        if (usesFirebase()) {
+            try {
+                const snap = await window._fbDB.collection('aerocade_accounts').get();
+                const accounts = {};
+                snap.forEach(doc => { accounts[doc.id] = doc.data(); });
+                return accounts;
+            } catch (e) { console.warn('Firebase read failed, using localStorage:', e); }
+        }
+        return JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    }
+
+    async function saveAccount(name, data) {
+        if (usesFirebase()) {
+            try { await window._fbDB.collection('aerocade_accounts').doc(name).set(data); return; } catch (e) { console.warn('Firebase write failed:', e); }
+        }
+        const accounts = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+        accounts[name] = data;
+        localStorage.setItem(LS_KEY, JSON.stringify(accounts));
+    }
+
+    async function deleteAccount(name) {
+        if (usesFirebase()) {
+            try { await window._fbDB.collection('aerocade_accounts').doc(name).delete(); return; } catch (e) { console.warn('Firebase delete failed:', e); }
+        }
+        const accounts = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+        delete accounts[name];
+        localStorage.setItem(LS_KEY, JSON.stringify(accounts));
+    }
+
+    let _sessionCache = null;
+    function getSession() {
+        if (_sessionCache) return _sessionCache;
+        if (usesFirebase() && window._fbAuth?.currentUser) {
+            const u = window._fbAuth.currentUser;
+            return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+        }
+        return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    }
+
+    function saveSession(s) {
+        _sessionCache = s;
+        localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+    }
+
+    function clearSession() {
+        _sessionCache = null;
+        localStorage.removeItem(SESSION_KEY);
+    }
+
     function isAdmin() { const s = getSession(); return s && s.role === 'admin'; }
 
     function updateSidebarUser() {
@@ -1879,10 +1927,10 @@ function initProfile() {
     }
 
     // === Saved Accounts Grid ===
-    function renderSavedAccounts(containerId, showSwitch) {
+    async function renderSavedAccounts(containerId, showSwitch) {
         const el = document.getElementById(containerId);
         if (!el) return;
-        const accounts = getAccounts();
+        const accounts = await getAccounts();
         const session = getSession();
         const names = Object.keys(accounts);
         if (!names.length) { el.innerHTML = ''; return; }
@@ -1926,15 +1974,13 @@ function initProfile() {
         }
 
         el.querySelectorAll('.profile-saved-card-del').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const name = btn.dataset.del;
                 if (!confirm(`Delete account "${name}"?`)) return;
-                const accts = getAccounts();
-                delete accts[name];
-                saveAccounts(accts);
+                await deleteAccount(name);
                 const s = getSession();
-                if (s?.username === name) clearSession();
+                if (s?.username === name) { clearSession(); if (usesFirebase()) window._fbAuth?.signOut().catch(()=>{}); }
                 renderSavedAccounts('profileSavedGrid', true);
                 renderSavedAccounts('profileSavedGridBottom', false);
                 if (!getSession()) showAuth();
@@ -1974,13 +2020,41 @@ function initProfile() {
     }
 
     // === Auth Handlers ===
-    document.getElementById('profileLoginBtn')?.addEventListener('click', () => {
+    document.getElementById('profileLoginBtn')?.addEventListener('click', async () => {
         const u = document.getElementById('profileLoginUser').value.trim();
         const p = document.getElementById('profileLoginPass').value;
         const err = document.getElementById('profileAuthError');
         err.textContent = '';
         if (!u || !p) { err.textContent = 'Please fill in all fields.'; return; }
-        const accounts = getAccounts();
+
+        if (usesFirebase()) {
+            try {
+                const email = u + '@aerocade.app';
+                const cred = await window._fbAuth.signInWithEmailAndPassword(email, p);
+                const doc = await window._fbDB.collection('aerocade_accounts').doc(u).get();
+                const data = doc.exists ? doc.data() : { role: 'member', miiStudio: DEFAULT_STUDIO };
+                saveSession({ username: u, role: data.role || 'member', miiStudio: data.miiStudio || DEFAULT_STUDIO, uid: cred.user.uid });
+                if (data.miiStudio) {
+                    const parsed = parseStudioCode(data.miiStudio);
+                    if (parsed) editorState = editorStateFromStudioData(parsed);
+                }
+                currentStudioData = buildStudioData();
+                showEditor();
+                updateSidebarUser();
+                updateAdminUI();
+                renderSavedAccounts('profileSavedGridBottom', false);
+                showToast(`Welcome back, ${u}!`, 'success');
+            } catch (e) {
+                if (e.code === 'auth/user-not-found') err.textContent = 'Account not found.';
+                else if (e.code === 'auth/wrong-password') err.textContent = 'Wrong password.';
+                else if (e.code === 'auth/invalid-credential') err.textContent = 'Invalid username or password.';
+                else err.textContent = e.message;
+            }
+            return;
+        }
+
+        // localStorage fallback
+        const accounts = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
         if (!accounts[u]) { err.textContent = 'Account not found.'; return; }
         if (accounts[u].password !== p) { err.textContent = 'Wrong password.'; return; }
         saveSession({ username: u, role: accounts[u].role, miiStudio: accounts[u].miiStudio });
@@ -1996,7 +2070,7 @@ function initProfile() {
         showToast(`Welcome back, ${u}!`, 'success');
     });
 
-    document.getElementById('profileRegBtn')?.addEventListener('click', () => {
+    document.getElementById('profileRegBtn')?.addEventListener('click', async () => {
         const u = document.getElementById('profileRegUser').value.trim();
         const p = document.getElementById('profileRegPass').value;
         const c = document.getElementById('profileRegConfirm').value;
@@ -2005,12 +2079,39 @@ function initProfile() {
         if (!u || !p) { err.textContent = 'Please fill in all fields.'; return; }
         if (p.length < 4) { err.textContent = 'Password must be 4+ characters.'; return; }
         if (p !== c) { err.textContent = 'Passwords do not match.'; return; }
-        const accounts = getAccounts();
+
+        if (usesFirebase()) {
+            try {
+                const existingAccounts = await getAccounts();
+                if (existingAccounts[u]) { err.textContent = 'Username taken.'; return; }
+                const email = u + '@aerocade.app';
+                const cred = await window._fbAuth.createUserWithEmailAndPassword(email, p);
+                randomizeMii();
+                const studioHex = studioDataToHex(currentStudioData);
+                const role = Object.keys(existingAccounts).length === 0 ? 'admin' : 'member';
+                const data = { role: role, miiStudio: studioHex, created: Date.now() };
+                await window._fbDB.collection('aerocade_accounts').doc(u).set(data);
+                saveSession({ username: u, role: role, miiStudio: studioHex, uid: cred.user.uid });
+                showEditor();
+                updateSidebarUser();
+                updateAdminUI();
+                renderSavedAccounts('profileSavedGridBottom', false);
+                showToast(`Account created! Welcome, ${u}!`, 'success');
+            } catch (e) {
+                if (e.code === 'auth/email-already-in-use') err.textContent = 'Username taken.';
+                else if (e.code === 'auth/weak-password') err.textContent = 'Password too weak.';
+                else err.textContent = e.message;
+            }
+            return;
+        }
+
+        // localStorage fallback
+        const accounts = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
         if (accounts[u]) { err.textContent = 'Username taken.'; return; }
         randomizeMii();
         const studioHex = studioDataToHex(currentStudioData);
         accounts[u] = { password: p, role: Object.keys(accounts).length === 0 ? 'admin' : 'member', miiStudio: studioHex, created: Date.now() };
-        saveAccounts(accounts);
+        localStorage.setItem(LS_KEY, JSON.stringify(accounts));
         saveSession({ username: u, role: accounts[u].role, miiStudio: studioHex });
         showEditor();
         updateSidebarUser();
@@ -2043,16 +2144,15 @@ function initProfile() {
         randomizeMii();
     });
 
-    document.getElementById('profileSaveBtn')?.addEventListener('click', () => {
+    document.getElementById('profileSaveBtn')?.addEventListener('click', async () => {
         const name = document.getElementById('profileNameInput')?.value.trim();
         if (!name) { showToast('Enter a name.', 'error'); return; }
-        const accounts = getAccounts();
+        const accounts = await getAccounts();
         const isNew = !accounts[name];
         const role = isNew ? (Object.keys(accounts).length === 0 ? 'admin' : 'member') : accounts[name].role;
         currentStudioData = buildStudioData();
         const studioHex = studioDataToHex(currentStudioData);
-        accounts[name] = { password: accounts[name]?.password || 'mii', role, miiStudio: studioHex };
-        saveAccounts(accounts);
+        await saveAccount(name, { password: accounts[name]?.password || 'mii', role, miiStudio: studioHex });
         saveSession({ username: name, role, miiStudio: studioHex });
         updateSidebarUser();
         updateAdminUI();
@@ -2061,7 +2161,8 @@ function initProfile() {
         showToast(isNew ? `Mii "${name}" created! (First account = Admin)` : `Mii "${name}" updated!`, 'success');
     });
 
-    document.getElementById('profileSignOutBtn')?.addEventListener('click', () => {
+    document.getElementById('profileSignOutBtn')?.addEventListener('click', async () => {
+        if (usesFirebase()) { try { await window._fbAuth.signOut(); } catch(e) {} }
         clearSession();
         showAuth();
         updateSidebarUser();
@@ -2125,6 +2226,33 @@ function initProfile() {
     })();
 
     window._aeroAcct = { isAdmin, updateAdminUI, getSession };
+
+    // === Firebase Auth State Listener ===
+    if (usesFirebase()) {
+        window._fbAuth.onAuthStateChanged(async (user) => {
+            if (!user) return;
+            // Session already exists from login, skip re-fetch
+            if (getSession()?.uid === user.uid) return;
+            // Derive username from email (we use {username}@aerocade.app)
+            const username = user.email.split('@')[0];
+            try {
+                const doc = await window._fbDB.collection('aerocade_accounts').doc(username).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    saveSession({ username, role: data.role, miiStudio: data.miiStudio, uid: user.uid });
+                    if (data.miiStudio) {
+                        const parsed = parseStudioCode(data.miiStudio);
+                        if (parsed) editorState = editorStateFromStudioData(parsed);
+                    }
+                    currentStudioData = buildStudioData();
+                    showEditor();
+                    renderSavedAccounts('profileSavedGridBottom', false);
+                    updateSidebarUser();
+                    updateAdminUI();
+                }
+            } catch(e) { console.warn('Firebase session restore failed:', e); }
+        });
+    }
 
     // === Initial render ===
     const session = getSession();

@@ -1484,9 +1484,38 @@ body {
     .emulator-bezel.canvas-mode { width: auto; height: auto; }
     .emulator-bezel.canvas-mode canvas { max-width: 92vw; max-height: 55vh; }
     .emulator-controls-bar { gap: 6px; padding: 8px 12px; }
-    .topbar { padding: 0 16px; }
+    .topbar { padding: 0 16px 0 48px; }
     .topbar-title { font-size: 17px; }
     .settings-sections { padding: 0 16px; }
+
+    .wiishop-header { padding: 20px 16px 16px; }
+    .wiishop-categories { padding: 12px 16px; }
+    .wiishop-grid { padding: 8px 16px 24px; }
+    .wiishop-footer { padding: 16px 16px 24px; }
+    .scene3d { padding: 10px 16px 20px; }
+    .card3d { width: 100%; max-width: 300px; }
+
+    .profile-wrap { padding: 16px 12px; }
+    .profile-editor { flex-direction: column; }
+    .profile-editor-left { width: 100%; }
+    .profile-mii-stage { width: 180px; height: 220px; margin: 0 auto; }
+
+    .dc-screen { width: 98vw; height: 90vh; border-radius: 16px; }
+    .dc-disc { width: 140px; height: 140px; }
+    .dc-disc-inner { width: 48px; height: 48px; }
+    .dc-disc-label { font-size: 22px; }
+    .dc-disc-title { font-size: 15px; padding: 0 40px; }
+    .dc-nav { width: 36px; height: 36px; font-size: 22px; }
+    .dc-nav--left { left: 10px; }
+    .dc-nav--right { right: 10px; }
+    .dc-bottom-bar { height: 64px; gap: 12px; padding: 0 16px; }
+    .dc-btn { min-width: 0; flex: 1; height: 40px; font-size: 14px; }
+    .dc-admin-edit { bottom: 76px; right: 12px; font-size: 11px; }
+    .dc-channel-label { font-size: 11px; right: 16px; top: 12px; }
+
+    .loading-inner { min-width: auto !important; padding: 32px 28px 28px !important; }
+    .loading-logo { font-size: 32px; }
+    .loading-logo-s { font-size: 36px; }
 }
 
 @media (max-width: 480px) {
@@ -1504,6 +1533,34 @@ body {
     .emulator-bezel.canvas-mode canvas { max-width: 96vw; max-height: 50vh; }
     .emulator-status-bar { font-size: 10px; gap: 8px; padding: 4px 12px; }
     .modal { min-width: auto; margin: 16px; }
+
+    .wiishop-title { font-size: 22px; }
+    .wiishop-grid { grid-template-columns: 1fr; }
+
+    .profile-editor-left { width: 100%; }
+    .profile-mii-stage { width: 150px; height: 190px; }
+    .profile-tabs { flex-wrap: wrap; gap: 4px; }
+    .profile-tab { font-size: 11px; padding: 6px 10px; }
+
+    .dc-screen { height: 92vh; border-radius: 12px; }
+    .dc-disc { width: 110px; height: 110px; }
+    .dc-disc-inner { width: 40px; height: 40px; }
+    .dc-disc-label { font-size: 18px; }
+    .dc-disc-title { font-size: 14px; padding: 0 28px; }
+    .dc-disc-subtitle { font-size: 11px; }
+    .dc-bottom-bar { height: 56px; gap: 8px; padding: 0 12px; }
+    .dc-btn { height: 36px; font-size: 13px; border-radius: 18px; }
+    .dc-nav { width: 30px; height: 30px; font-size: 18px; }
+
+    .loading-inner { padding: 24px 20px 20px !important; }
+    .loading-logo { font-size: 26px; }
+    .loading-logo-s { font-size: 30px; }
+    .loading-subtitle { font-size: 11px; }
+    .loading-bar-track { width: 180px; height: 8px; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    #wiiCursor { display: none !important; }
 }
 
 /* ==================== FULLSCREEN ==================== */

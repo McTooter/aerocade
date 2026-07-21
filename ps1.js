@@ -1,6 +1,4 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.PS1 = exports.PS1SPU = exports.PS1GPU = exports.PS1R3000A = void 0;
 
 class PS1R3000A {
   constructor(ps1) {
@@ -2096,6 +2094,11 @@ class PS1 {
   }
 }
 
-exports.PS1 = PS1;
-
-module.exports = exports;
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { PS1R3000A, PS1GPU, PS1SPU, PS1 };
+} else if (typeof window !== 'undefined') {
+    window.PS1R3000A = PS1R3000A;
+    window.PS1GPU = PS1GPU;
+    window.PS1SPU = PS1SPU;
+    window.PS1 = PS1;
+}
