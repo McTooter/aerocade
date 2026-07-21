@@ -2065,213 +2065,229 @@ body {
     z-index: 1;
 }
 
-/* ==================== GAME DETAIL MODAL ==================== */
-.gd-modal {
-    background: white;
-    border-radius: 20px;
-    max-width: 520px;
-    width: 92vw;
-    max-height: 88vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    position: relative;
-    box-shadow: 0 25px 80px rgba(0,0,0,0.25);
-    transform: scale(0.9) translateY(20px);
-    transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+/* ==================== WII DISC CHANNEL ==================== */
+.dc-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 600; opacity: 0; pointer-events: none;
+    transition: opacity 0.4s ease;
+    backdrop-filter: blur(6px);
 }
+.dc-overlay.show { opacity: 1; pointer-events: all; }
 
-.modal-overlay.show .gd-modal {
+.dc-screen {
+    width: 96vw; max-width: 900px;
+    height: 88vh; max-height: 640px;
+    background: linear-gradient(180deg, #f7f9fc 0%, #e8eef5 40%, #d5dce8 100%);
+    border-radius: 24px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 30px 100px rgba(0,0,0,0.4), 0 0 0 3px rgba(255,255,255,0.15);
+    transform: scale(0.85) translateY(30px);
+    transition: transform 0.5s cubic-bezier(0.16,1,0.3,1);
+    display: flex; flex-direction: column;
+}
+.dc-overlay.show .dc-screen {
     transform: scale(1) translateY(0);
 }
 
-.gd-close {
-    position: absolute; top: 12px; right: 12px;
-    width: 32px; height: 32px;
+.dc-channel-label {
+    position: absolute; top: 16px; right: 24px;
+    font-size: 13px; font-weight: 700;
+    color: rgba(80,90,110,0.6);
+    letter-spacing: 0.5px;
+    z-index: 5;
+    font-family: var(--font-body, sans-serif);
+}
+
+.dc-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 44px; height: 44px;
     border-radius: 50%;
-    border: none;
-    background: rgba(0,0,0,0.3);
-    backdrop-filter: blur(8px);
+    background: linear-gradient(180deg, #42a5f5, #1e88e5);
     color: white;
-    font-size: 20px; font-weight: 700;
-    cursor: pointer;
-    z-index: 10;
+    font-size: 28px; font-weight: 300;
     display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(30,136,229,0.4);
+    transition: all 0.2s;
+    z-index: 5;
+    user-select: none;
+    line-height: 1;
+}
+.dc-nav:hover { background: linear-gradient(180deg, #64b5f6, #42a5f5); transform: translateY(-50%) scale(1.1); }
+.dc-nav:active { transform: translateY(-50%) scale(0.95); }
+.dc-nav--left { left: 16px; }
+.dc-nav--right { right: 16px; }
+
+.dc-disc-area {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    position: relative;
+}
+.dc-disc-area.hidden {
+    opacity: 0; transform: scale(0.8);
+    pointer-events: none;
+    position: absolute; inset: 0;
+}
+
+.dc-disc {
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        #e0e0e0, #c0c0c0, #e8e8e8, #b0b0b0,
+        #d8d8d8, #a8a8a8, #e0e0e0, #c0c0c0,
+        #e8e8e8, #b0b0b0, #d8d8d8, #a8a8a8,
+        #e0e0e0
+    );
+    position: relative;
+    animation: dcDiscSpin 4s linear infinite;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15), inset 0 0 20px rgba(255,255,255,0.3);
+}
+.dc-disc.stopped { animation-play-state: paused; }
+
+@keyframes dcDiscSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.dc-disc-inner {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+    border: 2px solid #ccc;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+}
+
+.dc-disc-label {
+    font-size: 28px;
     line-height: 1;
 }
 
-.gd-close:hover { background: rgba(0,0,0,0.5); }
-
-.gd-cover {
-    height: 220px;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    position: relative;
-    overflow: hidden;
+.dc-disc-shine {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%, rgba(255,255,255,0.1) 100%);
+    pointer-events: none;
 }
 
-.gd-cover-emoji {
-    font-size: 64px;
-    filter: drop-shadow(0 4px 16px rgba(0,0,0,0.3));
-    z-index: 2;
-}
-
-.gd-cover-title {
-    font-family: var(--font-display);
+.dc-disc-title {
+    font-family: var(--font-display, sans-serif);
     font-size: 18px; font-weight: 800;
-    color: white;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-    z-index: 2;
+    color: #2c3e50;
     text-align: center;
-    padding: 0 20px;
-    margin-top: 4px;
+    padding: 0 60px;
 }
 
-.gd-cover-badge {
-    position: absolute; top: 12px; left: 12px;
-    background: rgba(0,0,0,0.45);
-    backdrop-filter: blur(6px);
-    color: white;
-    font-size: 11px; font-weight: 800;
-    padding: 3px 8px; border-radius: 5px;
-    z-index: 3;
+.dc-disc-subtitle {
+    font-size: 12px; font-weight: 600;
+    color: rgba(80,90,110,0.6);
 }
 
-.gd-cover-year {
-    position: absolute; bottom: 12px; right: 12px;
-    background: rgba(255,255,255,0.15);
-    backdrop-filter: blur(6px);
-    color: white;
-    font-size: 11px; font-weight: 700;
-    padding: 3px 8px; border-radius: 5px;
-    z-index: 3;
+.dc-video-area {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    transition: opacity 0.4s ease;
+    opacity: 0; pointer-events: none;
+    position: absolute; inset: 0;
+}
+.dc-video-area.visible {
+    opacity: 1; pointer-events: all;
+    position: relative;
 }
 
-.gd-cover-shine {
-    position: absolute; top: -50%; left: -60%;
-    width: 50%; height: 200%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-    transform: rotate(25deg);
-    z-index: 1;
-    animation: shineSlide 3s ease-in-out infinite;
-}
-
-@keyframes shineSlide {
-    0%, 100% { left: -60%; }
-    50% { left: 120%; }
-}
-
-.gd-info {
-    padding: 20px 24px;
-}
-
-.gd-header {
-    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-}
-
-.gd-name {
-    font-family: var(--font-display);
-    font-size: 22px; font-weight: 800;
-    color: var(--text);
-}
-
-.gd-console-pill {
-    display: none;
-}
-
-.gd-console {
-    font-size: 13px; color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.gd-desc {
-    font-size: 14px; color: var(--text-secondary);
-    line-height: 1.5; margin: 10px 0 14px;
-}
-
-.gd-price-row {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 16px; font-weight: 700;
-    color: #e65100;
-    margin-bottom: 16px;
-}
-
-.gd-price-icon { color: #ffa000; font-size: 18px; }
-
-.gd-action-btn {
-    width: 100%;
-    padding: 14px;
-    border-radius: 14px;
-    border: none;
-    font-size: 15px; font-weight: 700;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
-    font-family: var(--font-body);
-}
-
-.gd-action-btn.get {
-    background: linear-gradient(135deg, #2196f3, #1976d2);
-    color: white;
-    box-shadow: 0 4px 16px rgba(33,150,243,0.3);
-}
-
-.gd-action-btn.get:hover {
-    background: linear-gradient(135deg, #42a5f5, #2196f3);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(33,150,243,0.4);
-}
-
-.gd-action-btn.loaded {
-    background: linear-gradient(135deg, #4caf50, #388e3c);
-    color: white;
-}
-
-.gd-action-btn.playing {
-    background: linear-gradient(135deg, #ff9800, #f57c00);
-    color: white;
-}
-
-.gd-video-section {
-    padding: 0 24px 24px;
-}
-
-.gd-video-wrap {
+.dc-video-wrap {
+    width: 100%; max-width: 640px;
+    aspect-ratio: 16 / 9;
     border-radius: 12px;
     overflow: hidden;
-    aspect-ratio: 16 / 9;
     background: #000;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
 }
-
-.gd-video-wrap iframe {
+.dc-video-wrap iframe {
     width: 100%; height: 100%;
     border: none;
 }
 
-.gd-video-placeholder {
-    border-radius: 12px;
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    padding: 40px 20px;
-    text-align: center;
-    color: rgba(255,255,255,0.5);
+.dc-bottom-bar {
+    height: 72px;
+    background: linear-gradient(180deg, #c8cdd5 0%, #b0b8c4 100%);
+    border-top: 1px solid rgba(255,255,255,0.4);
+    display: flex; align-items: center; justify-content: center;
+    gap: 20px;
+    padding: 0 24px;
+    flex-shrink: 0;
 }
 
-.gd-video-icon {
-    font-size: 36px;
-    margin-bottom: 8px;
-    opacity: 0.4;
+.dc-btn {
+    min-width: 160px; height: 44px;
+    border-radius: 22px;
+    border: none;
+    font-family: var(--font-body, sans-serif);
+    font-size: 15px; font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+.dc-btn::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.4), rgba(255,255,255,0.05));
+    border-radius: 22px 22px 0 0;
 }
 
-.gd-video-placeholder p {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 4px;
+.dc-btn--left {
+    background: linear-gradient(180deg, #e8ecf0 0%, #cdd3db 100%);
+    color: #4a5568;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+.dc-btn--left:hover {
+    background: linear-gradient(180deg, #f0f3f6 0%, #d8dde5 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5);
 }
 
-.gd-video-placeholder span {
-    font-size: 11px;
-    opacity: 0.6;
+.dc-btn--right {
+    background: linear-gradient(180deg, #42a5f5 0%, #1e88e5 100%);
+    color: white;
+    box-shadow: 0 3px 10px rgba(30,136,229,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
 }
+.dc-btn--right::before {
+    background: linear-gradient(180deg, rgba(255,255,255,0.3), rgba(255,255,255,0.0));
+}
+.dc-btn--right:hover {
+    background: linear-gradient(180deg, #64b5f6 0%, #42a5f5 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(30,136,229,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.dc-btn:active { transform: translateY(1px) !important; }
+
+.dc-admin-edit {
+    position: absolute; bottom: 84px; right: 24px;
+    background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(8px);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 6px 14px;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    z-index: 6;
+    transition: background 0.2s;
+}
+.dc-admin-edit:hover { background: rgba(0,0,0,0.5); }
 
 /* ==================== FRUTIGER AERO ANIMATIONS ==================== */
 
@@ -2431,29 +2447,7 @@ body {
     50% { transform: scale(1.1); }
 }
 
-/* Frosted glass game detail scroll bar */
-.gd-modal::-webkit-scrollbar { width: 4px; }
-.gd-modal::-webkit-scrollbar-track { background: transparent; }
-.gd-modal::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
-
-/* Console pill in game detail */
-.gd-console-pill {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 10px;
-    font-weight: 700;
-    background: var(--accent-light);
-    color: var(--accent);
-}
-
-/* Console tag colors for game detail */
-.gd-console[data-cons="nes"] { background: var(--nes-color); color: var(--red-dark); }
-.gd-console[data-cons="snes"] { background: var(--snes-color); color: var(--blue-dark); }
-.gd-console[data-cons="n64"] { background: var(--n64-color); color: var(--purple-dark); }
-.gd-console[data-cons="gb"] { background: var(--gb-color); color: var(--green-dark); }
-.gd-console[data-cons="genesis"] { background: var(--gen-color); color: var(--orange-dark); }
-.gd-console[data-cons="ps1"] { background: var(--ps1-color); color: #3730a3; }
+/* (old game detail styles removed) */
 
 /* ==================== SIDEBAR USER ==================== */
 .sidebar-user {
@@ -2648,6 +2642,22 @@ body {
 }
 .profile-saved-card { position: relative; }
 .profile-saved-card:hover .profile-saved-card-del { display: flex; }
+
+/* Close button (used in admin edit modal) */
+.gd-close {
+    position: absolute; top: 12px; right: 12px;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,0.15);
+    color: #555;
+    font-size: 20px; font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+    line-height: 1;
+}
+.gd-close:hover { background: rgba(0,0,0,0.25); }
 
 /* ==================== ADMIN EDIT MODAL ==================== */
 .ge-modal {

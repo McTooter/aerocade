@@ -1193,94 +1193,134 @@
         });
     }
 
+    let dcCurrentIdx = -1;
+    let dcVideoPlaying = false;
+
     function openGameDetail(idx) {
         const g = SHOP_GAMES[idx];
         if (!g) return;
         const c = CONSOLES[g.console];
-        const modal = $('#gameDetailModal');
-        if (!modal) return;
-        const loaded = gameLibrary.find(l => l.name === g.name);
-        const runningGame = loaded && running && activeConsole === g.console;
-        let btnClass = 'get', btnText = 'Get';
-        if (runningGame) { btnClass = 'playing'; btnText = 'Playing'; }
-        else if (loaded) { btnClass = 'loaded'; btnText = 'Loaded'; }
+        const overlay = $('#gameDetailModal');
+        if (!overlay) return;
 
-        let videoHtml = '';
-        if (g.videoUrl) {
+        dcCurrentIdx = idx;
+        dcVideoPlaying = false;
+
+        const disc = $('#dcDisc');
+        const discArea = $('#dcDiscArea');
+        const videoArea = $('#dcVideoArea');
+        const videoWrap = $('#dcVideoWrap');
+        const btnStart = $('#dcBtnStart');
+        const label = $('#dcDiscLabel');
+        const title = $('#dcDiscTitle');
+        const sub = $('#dcDiscSubtitle');
+
+        if (disc) { disc.classList.remove('stopped'); disc.style.animationPlayState = 'running'; }
+        if (discArea) { discArea.classList.remove('hidden'); discArea.style.display = ''; }
+        if (videoArea) { videoArea.classList.remove('visible'); videoArea.style.display = ''; }
+        if (videoWrap) videoWrap.innerHTML = '';
+        if (btnStart) { btnStart.textContent = 'Start'; btnStart.classList.remove('dc-btn--stop'); btnStart.classList.add('dc-btn--right'); }
+
+        if (label) label.textContent = g.emoji || '';
+        if (title) title.textContent = g.name;
+        if (sub) sub.textContent = (c ? c.name : g.console) + ' \u00B7 ' + g.year;
+
+        overlay.classList.add('show');
+        overlay.dataset.idx = idx;
+
+        const gdAdminEdit = document.getElementById('gdAdminEdit');
+        if (gdAdminEdit) gdAdminEdit.dataset.gameIdx = idx;
+    }
+
+    function stopDiscVideo() {
+        const disc = $('#dcDisc');
+        const discArea = $('#dcDiscArea');
+        const videoArea = $('#dcVideoArea');
+        const videoWrap = $('#dcVideoWrap');
+        const btnStart = $('#dcBtnStart');
+
+        if (disc) { disc.classList.remove('stopped'); disc.style.animationPlayState = 'running'; }
+        if (discArea) { discArea.classList.remove('hidden'); discArea.style.display = ''; }
+        if (videoArea) { videoArea.classList.remove('visible'); videoArea.style.display = ''; }
+        if (videoWrap) videoWrap.innerHTML = '';
+        if (btnStart) { btnStart.textContent = 'Start'; btnStart.classList.remove('dc-btn--stop'); btnStart.classList.add('dc-btn--right'); }
+        dcVideoPlaying = false;
+    }
+
+    function closeGameDetail() {
+        stopDiscVideo();
+        const overlay = $('#gameDetailModal');
+        if (overlay) overlay.classList.remove('show');
+        dcCurrentIdx = -1;
+    }
+
+    function startDiscVideo() {
+        const g = SHOP_GAMES[dcCurrentIdx];
+        if (!g) return;
+        const disc = $('#dcDisc');
+        const discArea = $('#dcDiscArea');
+        const videoArea = $('#dcVideoArea');
+        const videoWrap = $('#dcVideoWrap');
+        const btnStart = $('#dcBtnStart');
+
+        if (disc) { disc.classList.add('stopped'); disc.style.animationPlayState = 'paused'; }
+        if (discArea) { discArea.classList.add('hidden'); discArea.style.display = 'none'; }
+        if (videoArea) { videoArea.classList.add('visible'); videoArea.style.display = ''; }
+
+        if (g.videoUrl && videoWrap) {
             let embedUrl = '';
             const url = g.videoUrl.trim();
             const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?.*?v=|embed\/|v\/)|youtu\.be\/)([\w-]{11})/);
             if (ytMatch) {
-                embedUrl = 'https://www.youtube.com/embed/' + ytMatch[1] + '?rel=0&modestbranding=1';
+                embedUrl = 'https://www.youtube.com/embed/' + ytMatch[1] + '?rel=0&modestbranding=1&autoplay=1&mute=1&enablejsapi=1';
             } else if (url.includes('player.vimeo.com/video/')) {
                 embedUrl = url;
             } else {
                 embedUrl = url;
             }
             if (embedUrl) {
-                videoHtml = `<div class="gd-video-wrap"><iframe src="${embedUrl}" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe></div>`;
+                videoWrap.innerHTML = '<iframe src="' + embedUrl + '" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>';
             }
-        } else {
-            videoHtml = `<div class="gd-video-placeholder">
-                <div class="gd-video-icon">\u{1F3AC}</div>
-                <p>No video preview available</p>
-                <span>Video URL can be set in the game data</span>
-            </div>`;
+        } else if (videoWrap) {
+            videoWrap.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a2e,#16213e);color:rgba(255,255,255,0.5);font-size:16px;font-weight:600;">No video preview available</div>';
         }
 
-        modal.querySelector('.gd-cover').style.background = g.bg;
-        modal.querySelector('.gd-cover-emoji').textContent = g.emoji;
-        modal.querySelector('.gd-cover-title').textContent = g.name;
-        modal.querySelector('.gd-cover-badge').textContent = g.rating;
-        modal.querySelector('.gd-cover-year').textContent = g.year;
-        modal.querySelector('.gd-name').textContent = g.name;
-        const consoleEl = modal.querySelector('.gd-console');
-        consoleEl.textContent = (c ? c.name : g.console);
-        consoleEl.setAttribute('data-cons', g.console);
-        const pillEl = modal.querySelector('.gd-console-pill');
-        if (pillEl) { pillEl.textContent = (c ? c.name : g.console); pillEl.setAttribute('data-cons', g.console); }
-        modal.querySelector('.gd-desc').textContent = g.desc;
-        modal.querySelector('.gd-price-val').textContent = g.price.toLocaleString();
-        modal.querySelector('.gd-video-section').innerHTML = videoHtml;
-        const actionBtn = modal.querySelector('.gd-action-btn');
-        actionBtn.className = `gd-action-btn ${btnClass}`;
-        actionBtn.textContent = btnText;
-        actionBtn.dataset.console = g.console;
-        actionBtn.dataset.name = g.name;
-
-        modal.classList.add('show');
-        modal.dataset.idx = idx;
-
-        const gdAdminEdit = document.getElementById('gdAdminEdit');
-        if (gdAdminEdit) gdAdminEdit.dataset.gameIdx = idx;
-    }
-
-    function closeGameDetail() {
-        const modal = $('#gameDetailModal');
-        if (modal) modal.classList.remove('show');
-        const editModal = document.getElementById('gameEditModal');
-        if (editModal) editModal.classList.remove('show');
+        if (btnStart) { btnStart.textContent = 'Stop'; btnStart.classList.add('dc-btn--stop'); btnStart.classList.remove('dc-btn--right'); }
+        dcVideoPlaying = true;
     }
 
     document.addEventListener('click', e => {
-        if (e.target.id === 'gameDetailModal' || e.target.closest('.gd-close')) closeGameDetail();
-        if (e.target.id === 'gameEditModal') e.target.classList.remove('show');
+        if (e.target.id === 'gameDetailModal') closeGameDetail();
     });
 
-    document.addEventListener('click', e => {
-        const actionBtn = e.target.closest('.gd-action-btn');
-        if (!actionBtn) return;
-        const con = actionBtn.dataset.console;
-        if (actionBtn.classList.contains('loaded') || actionBtn.classList.contains('playing')) {
-            closeGameDetail();
-            activeConsole = con;
-            showView('library');
-            return;
-        }
-        activeConsole = con;
-        romFileInput.accept = (CONSOLES[con]?.exts || []).join(',');
+    document.getElementById('dcNavLeft')?.addEventListener('click', e => {
+        e.stopPropagation();
+        const overlay = $('#gameDetailModal');
+        const idx = parseInt(overlay?.dataset.idx ?? -1);
+        if (idx < 0) return;
+        const prev = idx > 0 ? idx - 1 : SHOP_GAMES.length - 1;
         closeGameDetail();
-        romFileInput.click();
+        setTimeout(() => openGameDetail(prev), 50);
+    });
+
+    document.getElementById('dcNavRight')?.addEventListener('click', e => {
+        e.stopPropagation();
+        const overlay = $('#gameDetailModal');
+        const idx = parseInt(overlay?.dataset.idx ?? -1);
+        if (idx < 0) return;
+        const next = idx < SHOP_GAMES.length - 1 ? idx + 1 : 0;
+        closeGameDetail();
+        setTimeout(() => openGameDetail(next), 50);
+    });
+
+    document.getElementById('dcBtnBack')?.addEventListener('click', () => closeGameDetail());
+
+    document.getElementById('dcBtnStart')?.addEventListener('click', () => {
+        if (dcVideoPlaying) {
+            stopDiscVideo();
+        } else {
+            startDiscVideo();
+        }
     });
 
     $('#wiishopCategories')?.addEventListener('click', (e) => {
@@ -2052,6 +2092,10 @@ function initProfile() {
 
     document.getElementById('geClose')?.addEventListener('click', () => {
         document.getElementById('gameEditModal').classList.remove('show');
+    });
+
+    document.getElementById('gameEditModal')?.addEventListener('click', e => {
+        if (e.target.id === 'gameEditModal') e.target.classList.remove('show');
     });
 
     document.getElementById('geSaveBtn')?.addEventListener('click', () => {

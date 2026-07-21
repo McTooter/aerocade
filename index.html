@@ -604,33 +604,30 @@
     </div>
 </div>
 
-<!-- Game Detail Modal -->
-<div class="modal-overlay" id="gameDetailModal">
-    <div class="gd-modal">
-        <button class="gd-close">&times;</button>
-        <div class="gd-cover">
-            <div class="gd-cover-shine"></div>
-            <div class="gd-cover-emoji"></div>
-            <div class="gd-cover-title"></div>
-            <div class="gd-cover-badge"></div>
-            <div class="gd-cover-year"></div>
-        </div>
-        <div class="gd-info">
-            <div class="gd-header">
-                <div class="gd-name"></div>
-                <span class="gd-console-pill"></span>
-                <span class="gd-console"></span>
+<!-- Wii Disc Channel -->
+<div id="gameDetailModal" class="dc-overlay">
+    <div class="dc-screen">
+        <div class="dc-channel-label">Disc Channel</div>
+        <div class="dc-nav dc-nav--left" id="dcNavLeft">&lsaquo;</div>
+        <div class="dc-nav dc-nav--right" id="dcNavRight">&rsaquo;</div>
+        <div class="dc-disc-area" id="dcDiscArea">
+            <div class="dc-disc" id="dcDisc">
+                <div class="dc-disc-inner">
+                    <div class="dc-disc-label" id="dcDiscLabel"></div>
+                </div>
+                <div class="dc-disc-shine"></div>
             </div>
-            <p class="gd-desc"></p>
-            <div class="gd-price-row">
-                <span class="gd-price-icon">&#9733;</span>
-                <span class="gd-price-val"></span>
-                <span>Wii Points</span>
-            </div>
-            <button class="gd-action-btn get">Get</button>
-            <button class="gd-admin-edit-btn" id="gdAdminEdit" style="display:none;margin-top:8px;">&#9998; Edit Cover & Video</button>
+            <div class="dc-disc-title" id="dcDiscTitle"></div>
+            <div class="dc-disc-subtitle" id="dcDiscSubtitle"></div>
         </div>
-        <div class="gd-video-section"></div>
+        <div class="dc-video-area" id="dcVideoArea">
+            <div class="dc-video-wrap" id="dcVideoWrap"></div>
+        </div>
+        <div class="dc-bottom-bar">
+            <button class="dc-btn dc-btn--left" id="dcBtnBack">Wii Menu</button>
+            <button class="dc-btn dc-btn--right" id="dcBtnStart">Start</button>
+        </div>
+        <button class="dc-admin-edit" id="gdAdminEdit" style="display:none;">&#9998; Edit</button>
     </div>
 </div>
 
