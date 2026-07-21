@@ -1810,7 +1810,11 @@ function initProfile() {
         const local = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
         if (JSONBIN_KEY && JSONBIN_ID) {
             const remote = await jsonbinGet();
-            if (remote && remote[ADMIN_NAME]) local[ADMIN_NAME] = remote[ADMIN_NAME];
+            if (remote && remote[ADMIN_NAME]) {
+                const adminData = remote[ADMIN_NAME];
+                adminData.role = 'admin';
+                local[ADMIN_NAME] = adminData;
+            }
         }
         return local;
     }
@@ -1836,7 +1840,7 @@ function initProfile() {
     function getSession() { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
     function saveSession(s) { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
     function clearSession() { localStorage.removeItem(SESSION_KEY); }
-    function isAdmin() { const s = getSession(); return s && s.role === 'admin'; }
+    function isAdmin() { const s = getSession(); return s && (s.role === 'admin' || s.username === ADMIN_NAME); }
 
     function updateSidebarUser() {
         const s = getSession();
@@ -1850,8 +1854,8 @@ function initProfile() {
         miiEl.innerHTML = renderMiiImg(miiHex, 96);
         miiEl.style.background = 'linear-gradient(180deg, #e3f2fd, #90caf9)';
         nameEl.textContent = s.username;
-        roleEl.textContent = s.role === 'admin' ? '★ Admin' : 'Member';
-        roleEl.style.color = s.role === 'admin' ? '#818cf8' : '';
+        roleEl.textContent = (s.role === 'admin' || s.username === ADMIN_NAME) ? '★ Admin' : 'Member';
+        roleEl.style.color = (s.role === 'admin' || s.username === ADMIN_NAME) ? '#818cf8' : '';
     }
 
     function updateAdminUI() {
@@ -1871,7 +1875,7 @@ function initProfile() {
         const roleEl = document.getElementById('profileMiiRole');
         if (roleEl) {
             const s = getSession();
-            roleEl.textContent = s ? (s.role === 'admin' ? '★ Admin' : 'Member') : '';
+            roleEl.textContent = s ? ((s.role === 'admin' || s.username === ADMIN_NAME) ? '★ Admin' : 'Member') : '';
         }
     }
 
@@ -1947,7 +1951,7 @@ function initProfile() {
             const a = accounts[name];
             const miiHex = a.miiStudio || DEFAULT_STUDIO;
             const isActive = session?.username === name;
-            const roleLabel = a.role === 'admin' ? '★ Admin' : 'Member';
+            const roleLabel = (a.role === 'admin' || name === ADMIN_NAME) ? '★ Admin' : 'Member';
             html += `<div class="profile-saved-card${isActive ? ' active' : ''}" data-user="${name}">
                 <div class="profile-saved-mini">${renderMiiImg(miiHex, 96)}</div>
                 <div class="profile-saved-card-name">${name}</div>
@@ -2098,7 +2102,18 @@ function initProfile() {
             if (remote && remote[ADMIN_NAME]) {
                 const data = remote[ADMIN_NAME];
                 saveSession({ username: ADMIN_NAME, role: 'admin', miiStudio: data.miiStudio });
+                if (data.miiStudio) {
+                    const parsed = parseStudioCode(data.miiStudio);
+                    if (parsed) editorState = editorStateFromStudioData(parsed);
+                    currentStudioData = buildStudioData();
+                    const nameInput = document.getElementById('profileNameInput');
+                    if (nameInput) nameInput.value = ADMIN_NAME;
+                    renderStage();
+                    renderPanels();
+                }
                 renderSavedAccounts('profileSavedGridBottom');
+                updateSidebarUser();
+                updateAdminUI();
             }
         })();
     }
