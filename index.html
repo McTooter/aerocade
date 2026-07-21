@@ -400,35 +400,8 @@
         <!-- Profile & Mii Maker View -->
         <div class="view" id="viewMiiMaker">
             <div class="profile-wrap">
-                <!-- Not logged in: auth panel -->
-                <div class="profile-auth" id="profileAuth">
-                    <div class="profile-auth-card">
-                        <div class="profile-auth-avatar" id="profileAuthMii"></div>
-                        <h3 class="profile-auth-title">Welcome to SUMEE!</h3>
-                        <p class="profile-auth-sub">Sign in to create your Mii and save your library.</p>
-                        <div class="profile-auth-form" id="profileLoginForm">
-                            <input type="text" id="profileLoginUser" placeholder="Username" class="profile-input" maxlength="20">
-                            <input type="password" id="profileLoginPass" placeholder="Password" class="profile-input">
-                            <button class="profile-btn primary" id="profileLoginBtn">Sign In</button>
-                            <p class="profile-auth-switch">No account? <a href="#" id="profileShowReg">Create one</a></p>
-                        </div>
-                        <div class="profile-auth-form" id="profileRegForm" style="display:none;">
-                            <input type="text" id="profileRegUser" placeholder="Choose a username" class="profile-input" maxlength="20">
-                            <input type="password" id="profileRegPass" placeholder="Password (4+ chars)" class="profile-input">
-                            <input type="password" id="profileRegConfirm" placeholder="Confirm password" class="profile-input">
-                            <button class="profile-btn primary" id="profileRegBtn">Create Account</button>
-                            <p class="profile-auth-switch">Already have one? <a href="#" id="profileShowLogin">Sign in</a></p>
-                        </div>
-                        <div class="profile-auth-error" id="profileAuthError"></div>
-                        <div class="profile-saved-section" id="profileSavedSection">
-                            <div class="profile-saved-title">Switch Account</div>
-                            <div class="profile-saved-grid" id="profileSavedGrid"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Logged in: editor -->
-                <div class="profile-editor" id="profileEditor" style="display:none;">
+                <!-- Editor (always visible) -->
+                <div class="profile-editor" id="profileEditor">
                     <div class="profile-editor-left">
                         <div class="profile-mii-stage">
                             <div class="profile-mii-bg"></div>
@@ -440,9 +413,6 @@
                         <div class="profile-actions-row">
                             <button class="profile-btn" id="profileRandomBtn">🎲 Randomize</button>
                             <button class="profile-btn primary" id="profileSaveBtn">💾 Save</button>
-                        </div>
-                        <div class="profile-actions-row">
-                            <button class="profile-btn" id="profileSignOutBtn">Sign Out</button>
                         </div>
                     </div>
                     <div class="profile-editor-right">
@@ -661,9 +631,8 @@
 <!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
 
-<!-- Firebase SDK (global account system) -->
+<!-- Firebase SDK (Firestore for admin account sync) -->
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 
