@@ -2,6 +2,67 @@
     const $ = s => document.querySelector(s);
     const $$ = s => document.querySelectorAll(s);
 
+    // ==================== LOADING SCREEN ====================
+    const loadingScreen = $('#loadingScreen');
+    const loadingBarFill = $('#loadingBarFill');
+    const loadingStatus = $('#loadingStatus');
+    const SESSION_LOADED = 'aerocade_loaded';
+
+    function setLoadProgress(pct, msg) {
+        if (loadingBarFill) loadingBarFill.style.width = pct + '%';
+        if (loadingStatus) loadingStatus.textContent = msg;
+    }
+
+    async function runLoadingScreen() {
+        if (sessionStorage.getItem(SESSION_LOADED)) {
+            if (loadingScreen) loadingScreen.classList.add('hidden');
+            return;
+        }
+
+        setLoadProgress(5, 'Loading styles...');
+        await preloadImage('https://studio.mii.nintendo.com/miis/image.png?data=000b1259616c6f72707d7e848788939aa3b0bac1c8cfd2d9e0ebf2ff0209470e161d19141e19243a3e4148474a4751&width=512&type=face');
+
+        setLoadProgress(25, 'Preparing effects...');
+        await new Promise(r => setTimeout(r, 300));
+
+        setLoadProgress(45, 'Loading Mii data...');
+        await Promise.all([
+            preloadImage('https://studio.mii.nintendo.com/miis/image.png?data=000f145b5f5e646e49546169687477858e878a87878e969d9c9fa6b3b9c0e5acafb6bbb6bcb6b9b8bebfc3cfd1d9da&width=128&type=face'),
+            preloadImage('https://studio.mii.nintendo.com/miis/image.png?data=000b1259616e717c6875868c8f909ba2aba8b4bbbfc6c9cfd6d9e0f1f900763d434a4c5f637679757f82898893a0b4&width=128&type=face'),
+        ]);
+
+        setLoadProgress(65, 'Initializing consoles...');
+        await new Promise(r => setTimeout(r, 250));
+
+        setLoadProgress(80, 'Loading Shop Channel...');
+        await new Promise(r => setTimeout(r, 250));
+
+        setLoadProgress(95, 'Finalizing...');
+        await new Promise(r => setTimeout(r, 200));
+
+        setLoadProgress(100, 'Ready!');
+        await new Promise(r => setTimeout(r, 350));
+
+        if (loadingScreen) {
+            loadingScreen.classList.add('fade-out');
+            await new Promise(r => setTimeout(r, 600));
+            loadingScreen.classList.add('hidden');
+        }
+
+        sessionStorage.setItem(SESSION_LOADED, '1');
+    }
+
+    function preloadImage(src) {
+        return new Promise(resolve => {
+            const img = new Image();
+            img.onload = resolve;
+            img.onerror = resolve;
+            img.src = src;
+        });
+    }
+
+    runLoadingScreen();
+
     const canvas = $('#emulatorCanvas');
     const ctx = canvas.getContext('2d');
     const romFileInput = $('#romFileInput');

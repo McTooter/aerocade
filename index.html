@@ -25,6 +25,26 @@
 <div id="auroraBandContainer" style="position:fixed;inset:0;z-index:47;pointer-events:none;overflow:hidden;"></div>
 <div class="grass-strip"></div>
 
+<!-- Wii Shop Loading Screen -->
+<div id="loadingScreen" class="loading-screen">
+    <div class="loading-inner">
+        <div class="loading-globe-wrap">
+            <div class="loading-globe">
+                <div class="loading-globe-ring loading-globe-ring--1"></div>
+                <div class="loading-globe-ring loading-globe-ring--2"></div>
+                <div class="loading-globe-ring loading-globe-ring--3"></div>
+                <div class="loading-globe-core"></div>
+            </div>
+        </div>
+        <div class="loading-title">SUMEE!</div>
+        <div class="loading-subtitle">Loading...</div>
+        <div class="loading-bar-track">
+            <div class="loading-bar-fill" id="loadingBarFill"></div>
+        </div>
+        <div class="loading-status" id="loadingStatus">Initializing...</div>
+    </div>
+</div>
+
 <!-- Wii Cursor -->
 <div id="wiiCursor" style="position:fixed;z-index:99999;pointer-events:none;opacity:0;transition:opacity 0.15s;transform:translate(-6px,-2px);">
     <svg viewBox="0 0 48 64" width="36" height="48" style="filter:drop-shadow(0 1px 4px rgba(0,0,0,0.4));">
