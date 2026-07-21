@@ -587,12 +587,13 @@
         $$('.nav-item').forEach(n => n.classList.remove('active'));
         let nav = $(`.nav-item[data-view="${id}"]`);
         if (nav) nav.classList.add('active');
-        const titles = { home: 'Home', library: 'Library', settings: 'Settings', emulator: 'Emulator', wiishop: 'Wii Shop' };
+        const titles = { home: 'Home', library: 'Library', settings: 'Settings', emulator: 'Emulator', wiishop: 'Wii Shop', miimaker: 'Mii Maker' };
         $('#topbarTitle').textContent = titles[id] || 'Home';
         $('#topbarBreadcrumb').textContent = titles[id] || 'Home';
         let showEmu = id === 'emulator';
         $('#btnStartStop').style.display = showEmu ? '' : 'none';
         $('#btnReset').style.display = showEmu ? '' : 'none';
+        if (id === 'settings') refreshSettingsData();
         closeSidebar();
     }
 
@@ -971,6 +972,33 @@
     $('#modalClose').addEventListener('click', () => $('#keyMapModal').classList.remove('show'));
     $('#keyMapModal').addEventListener('click', e => { if (e.target === e.currentTarget) e.target.classList.remove('show'); });
 
+    function refreshSettingsData() {
+        const acctCount = Object.keys(JSON.parse(localStorage.getItem('aerocade_accounts') || '{}')).length;
+        const romCount = gameLibrary.length;
+        const editCount = JSON.parse(localStorage.getItem('aerocade_shop_edits') || '[]').filter(e => e.videoUrl || e.bg || e.emoji).length;
+        const acctEl = document.getElementById('dataAcctCount');
+        const romEl = document.getElementById('dataRomCount');
+        const editEl = document.getElementById('dataEditCount');
+        if (acctEl) acctEl.textContent = acctCount;
+        if (romEl) romEl.textContent = romCount;
+        if (editEl) editEl.textContent = editCount;
+    }
+
+    document.getElementById('btnClearData')?.addEventListener('click', () => {
+        if (!confirm('This will clear ALL saved accounts, Miis, ROMs, and shop edits. Are you sure?')) return;
+        if (!confirm('Really clear everything? This cannot be undone.')) return;
+        localStorage.removeItem('aerocade_accounts');
+        localStorage.removeItem('aerocade_session');
+        localStorage.removeItem('aerocade_shop_edits');
+        gameLibrary.length = 0;
+        renderLibrary();
+        renderShopGrid('all');
+        refreshSettingsData();
+        if (window._aeroAcct) window._aeroAcct.updateAdminUI();
+        document.getElementById('sidebarUser').style.display = 'none';
+        showToast('All data cleared.', 'info');
+    });
+
     // ==================== TOAST ====================
     function showToast(msg, type = 'info') {
         let toast = document.createElement('div');
@@ -987,38 +1015,38 @@
 
     // ==================== WII SHOP ====================
     const SHOP_GAMES = [
-        { name: 'Super Mario Bros.', console: 'nes', emoji: '\u{1F34E}', color: '#fee2e2', accent: '#dc2626', bg: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', price: 500, desc: 'The game that defined a generation. Run, jump, and save the Mushroom Kingdom!', rating: 'E', year: 1985, videoUrl: '' },
-        { name: 'The Legend of Zelda', console: 'nes', emoji: '\u{1F6E1}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)', price: 500, desc: 'Explore Hyrule, find 8 Triforce pieces, and defeat Ganon.', rating: 'E', year: 1986, videoUrl: '' },
-        { name: 'Metroid', console: 'nes', emoji: '\u{1F47E}', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #0c0c1d, #1a1a3e, #2d1b69)', price: 500, desc: 'Bounty hunter Samus Aran explores planet Zebes alone.', rating: 'E', year: 1986, videoUrl: '' },
-        { name: 'Mega Man 2', console: 'nes', emoji: '\u{1F916}', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #141e30, #243b55)', price: 500, desc: 'Defeat 8 Robot Masters and take their powers!', rating: 'E', year: 1988, videoUrl: '' },
-        { name: 'Castlevania', console: 'nes', emoji: '\u{1F3DB}', color: '#e0e7ff', accent: '#4338ca', bg: 'linear-gradient(135deg, #1a0000, #3d0000, #5c0000)', price: 500, desc: 'Storm Dracula\'s castle as the legendary Belmont.', rating: 'E', year: 1986, videoUrl: '' },
-        { name: 'Contra', console: 'nes', emoji: '\u{1F3AF}', color: '#fee2e2', accent: '#dc2626', bg: 'linear-gradient(135deg, #1b1b2f, #162447, #1f4068)', price: 500, desc: 'Classic run-and-gun action with a friend!', rating: 'E', year: 1987, videoUrl: '' },
-        { name: 'Super Mario World', console: 'snes', emoji: '\u{1F34E}', color: '#f3e8ff', accent: '#7c3aed', bg: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', price: 800, desc: 'Yoshi\'s Island awaits! Ride Yoshi through 96 levels.', rating: 'E', year: 1990, videoUrl: '' },
-        { name: 'The Legend of Zelda: ALTTP', console: 'snes', emoji: '\u{1F6E1}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #0d1117, #161b22, #21262d)', price: 800, desc: 'The best top-down Zelda. Explore two parallel worlds.', rating: 'E', year: 1991, videoUrl: '' },
-        { name: 'Super Metroid', console: 'snes', emoji: '\u{1F47E}', color: '#e0e7ff', accent: '#4338ca', bg: 'linear-gradient(135deg, #0a0a1a, #1a0a2e, #2a1a3e)', price: 800, desc: 'Atmospheric masterpiece on planet Zebes.', rating: 'E', year: 1994, videoUrl: '' },
-        { name: 'Chrono Trigger', console: 'snes', emoji: '\u{269B}', color: '#fef3c7', accent: '#d97706', bg: 'linear-gradient(135deg, #141e30, #243b55, #2c5364)', price: 800, desc: 'Time-travel RPG perfection by the Dream Team.', rating: 'E', year: 1995, videoUrl: '' },
-        { name: 'Final Fantasy VI', console: 'snes', emoji: '\u{2728}', color: '#fce7f3', accent: '#db2777', bg: 'linear-gradient(135deg, #232526, #414345)', price: 800, desc: 'Kefka threatens to destroy the world. 14 playable characters.', rating: 'E', year: 1994, videoUrl: '' },
-        { name: 'Donkey Kong Country', console: 'snes', emoji: '\u{1F43C}', color: '#ffedd5', accent: '#ea580c', bg: 'linear-gradient(135deg, #1a1a00, #2d2d00, #4a4a00)', price: 800, desc: 'Pre-rendered 3D graphics were revolutionary in 1994.', rating: 'E', year: 1994, videoUrl: '' },
-        { name: 'Super Mario 64', console: 'n64', emoji: '\u{1F34E}', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #667eea, #764ba2)', price: 1000, desc: 'The game that defined 3D platforming forever.', rating: 'E', year: 1996, videoUrl: '' },
-        { name: 'The Legend of Zelda: OoT', console: 'n64', emoji: '\u{1F6E1}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #134e5e, #71b280)', price: 1000, desc: 'The greatest adventure of all time. Save Hyrule from Ganondorf.', rating: 'E', year: 1998, videoUrl: '' },
-        { name: 'Mario Kart 64', console: 'n64', emoji: '\u{1F3CE}', color: '#fee2e2', accent: '#dc2626', bg: 'linear-gradient(135deg, #c31432, #240b36)', price: 1000, desc: 'Blue shells and friendship destroyers since 1996.', rating: 'E', year: 1996, videoUrl: '' },
-        { name: 'GoldenEye 007', console: 'n64', emoji: '\u{1F52B}', color: '#fef3c7', accent: '#d97706', bg: 'linear-gradient(135deg, #1c1c1c, #2d2d2d, #3a3a3a)', price: 1000, desc: 'The FPS that proved console shooters work.', rating: 'T', year: 1997, videoUrl: '' },
-        { name: 'Star Fox 64', console: 'n64', emoji: '\u{1F680}', color: '#e0e7ff', accent: '#4338ca', bg: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', price: 1000, desc: 'Do a barrel roll! On-rails space combat.', rating: 'E', year: 1997, videoUrl: '' },
-        { name: 'Banjo-Kazooie', console: 'n64', emoji: '\u{1F43B}', color: '#ffedd5', accent: '#ea580c', bg: 'linear-gradient(135deg, #56ab2f, #a8e063)', price: 1000, desc: 'Bear and bird duo collect jiggies in magical worlds.', rating: 'E', year: 1998, videoUrl: '' },
-        { name: 'Pok\u00E9mon Red', console: 'gb', emoji: '\u{1F534}', color: '#fee2e2', accent: '#dc2626', bg: 'linear-gradient(135deg, #8b0000, #c0392b, #e74c3c)', price: 400, desc: 'Gotta catch \'em all! Start your journey as a Pok\u00E9mon trainer.', rating: 'E', year: 1996, videoUrl: '' },
-        { name: 'Pok\u00E9mon Blue', console: 'gb', emoji: '\u{1F535}', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #000428, #004e92)', price: 400, desc: 'The blue counterpart. Trade to complete your Pok\u00E9dex!', rating: 'E', year: 1996, videoUrl: '' },
-        { name: 'The Legend of Zelda: LA', console: 'gb', emoji: '\u{1F6E1}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #2c3e50, #4ca1af)', price: 400, desc: 'Link washes up on Koholint Island. Was it all a dream?', rating: 'E', year: 1993, videoUrl: '' },
-        { name: 'Tetris', console: 'gb', emoji: '\u{1F9E9}', color: '#f3e8ff', accent: '#7c3aed', bg: 'linear-gradient(135deg, #fc5c7d, #6a82fb)', price: 400, desc: 'The most addictive puzzle game ever made.', rating: 'E', year: 1989, videoUrl: '' },
-        { name: 'Super Mario Land', console: 'gb', emoji: '\u{1F34E}', color: '#fef3c7', accent: '#d97706', bg: 'linear-gradient(135deg, #4e54c8, #8f94fb)', price: 400, desc: 'Mario\'s portable debut adventure in Sarasaland.', rating: 'E', year: 1989, videoUrl: '' },
-        { name: 'Sonic the Hedgehog', console: 'genesis', emoji: '\u{1F3AC}', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #1e3c72, #2a5298)', price: 600, desc: 'Blast through Green Hill Zone at supersonic speed!', rating: 'E', year: 1991, videoUrl: '' },
-        { name: 'Sonic the Hedgehog 2', console: 'genesis', emoji: '\u{1F3AC}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #11998e, #38ef7d)', price: 600, desc: 'Meet Tails! The definitive 16-bit platformer.', rating: 'E', year: 1992, videoUrl: '' },
-        { name: 'Streets of Rage 2', console: 'genesis', emoji: '\u{1F44A}', color: '#fee2e2', accent: '#dc2626', bg: 'linear-gradient(135deg, #b92b27, #1565c0)', price: 600, desc: 'The best beat \'em up on any console. Incredible Yuzo Koshiro soundtrack.', rating: 'T', year: 1992, videoUrl: '' },
-        { name: 'Golden Axe', console: 'genesis', emoji: '\u2694', color: '#ffedd5', accent: '#ea580c', bg: 'linear-gradient(135deg, #3a1c71, #d76d77, #ffaf7b)', price: 600, desc: 'Hack, slash, and ride dragons through a fantasy world.', rating: 'T', year: 1991, videoUrl: '' },
-        { name: 'Phantasy Star IV', console: 'genesis', emoji: '\u{1F30C}', color: '#e0e7ff', accent: '#4338ca', bg: 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)', price: 600, desc: 'Epic sci-fi RPG with comic-panel cutscenes.', rating: 'T', year: 1993, videoUrl: '' },
-        { name: 'Crash Bandicoot', console: 'ps1', emoji: '\u{1F34A}', color: '#ffedd5', accent: '#ea580c', bg: 'linear-gradient(135deg, #f12711, #f5af19)', price: 1200, desc: 'Spin through Wumpa Island and stop Dr. Neo Cortex!', rating: 'E', year: 1996, videoUrl: '' },
-        { name: 'Final Fantasy VII', console: 'ps1', emoji: '\u2728', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', price: 1200, desc: 'Cloud Strife vs Sephiroth. The JRPG that changed everything.', rating: 'T', year: 1997, videoUrl: '' },
-        { name: 'Spyro the Dragon', console: 'ps1', emoji: '\u{1F409}', color: '#f3e8ff', accent: '#7c3aed', bg: 'linear-gradient(135deg, #5b247a, #1bcedf)', price: 1200, desc: 'Glide and flame your way through 5 magical worlds.', rating: 'E', year: 1998, videoUrl: '' },
-        { name: 'Metal Gear Solid', console: 'ps1', emoji: '\u{1F5E1}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)', price: 1200, desc: 'Tactical espionage action. Snake? Snaaake!', rating: 'M', year: 1998, videoUrl: '' },
+        { name: 'Super Mario Bros.', console: 'nes', emoji: '\u{1F34E}', color: '#fee2e2', accent: '#dc2626', bg: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', price: 500, desc: 'The game that defined a generation. Run, jump, and save the Mushroom Kingdom!', rating: 'E', year: 1985, videoUrl: 'https://www.youtube.com/watch?v=FGxOQJqYdm0' },
+        { name: 'The Legend of Zelda', console: 'nes', emoji: '\u{1F6E1}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)', price: 500, desc: 'Explore Hyrule, find 8 Triforce pieces, and defeat Ganon.', rating: 'E', year: 1986, videoUrl: 'https://www.youtube.com/watch?v=X63hDkfm4S0' },
+        { name: 'Metroid', console: 'nes', emoji: '\u{1F47E}', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #0c0c1d, #1a1a3e, #2d1b69)', price: 500, desc: 'Bounty hunter Samus Aran explores planet Zebes alone.', rating: 'E', year: 1986, videoUrl: 'https://www.youtube.com/watch?v=pO1AVJvKRRM' },
+        { name: 'Mega Man 2', console: 'nes', emoji: '\u{1F916}', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #141e30, #243b55)', price: 500, desc: 'Defeat 8 Robot Masters and take their powers!', rating: 'E', year: 1988, videoUrl: 'https://www.youtube.com/watch?v=cKzGNg6zGZs' },
+        { name: 'Castlevania', console: 'nes', emoji: '\u{1F3DB}', color: '#e0e7ff', accent: '#4338ca', bg: 'linear-gradient(135deg, #1a0000, #3d0000, #5c0000)', price: 500, desc: 'Storm Dracula\'s castle as the legendary Belmont.', rating: 'E', year: 1986, videoUrl: 'https://www.youtube.com/watch?v=Rsw4G8MBnGk' },
+        { name: 'Contra', console: 'nes', emoji: '\u{1F3AF}', color: '#fee2e2', accent: '#dc2626', bg: 'linear-gradient(135deg, #1b1b2f, #162447, #1f4068)', price: 500, desc: 'Classic run-and-gun action with a friend!', rating: 'E', year: 1987, videoUrl: 'https://www.youtube.com/watch?v=i3lWUc0qKXc' },
+        { name: 'Super Mario World', console: 'snes', emoji: '\u{1F34E}', color: '#f3e8ff', accent: '#7c3aed', bg: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', price: 800, desc: 'Yoshi\'s Island awaits! Ride Yoshi through 96 levels.', rating: 'E', year: 1990, videoUrl: 'https://www.youtube.com/watch?v=0bMklG5ZnBY' },
+        { name: 'The Legend of Zelda: ALTTP', console: 'snes', emoji: '\u{1F6E1}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #0d1117, #161b22, #21262d)', price: 800, desc: 'The best top-down Zelda. Explore two parallel worlds.', rating: 'E', year: 1991, videoUrl: 'https://www.youtube.com/watch?v=Pq3kxjwZqH4' },
+        { name: 'Super Metroid', console: 'snes', emoji: '\u{1F47E}', color: '#e0e7ff', accent: '#4338ca', bg: 'linear-gradient(135deg, #0a0a1a, #1a0a2e, #2a1a3e)', price: 800, desc: 'Atmospheric masterpiece on planet Zebes.', rating: 'E', year: 1994, videoUrl: 'https://www.youtube.com/watch?v=tNHH7zTbXe0' },
+        { name: 'Chrono Trigger', console: 'snes', emoji: '\u{269B}', color: '#fef3c7', accent: '#d97706', bg: 'linear-gradient(135deg, #141e30, #243b55, #2c5364)', price: 800, desc: 'Time-travel RPG perfection by the Dream Team.', rating: 'E', year: 1995, videoUrl: 'https://www.youtube.com/watch?v=6bHvIUMtS8Y' },
+        { name: 'Final Fantasy VI', console: 'snes', emoji: '\u{2728}', color: '#fce7f3', accent: '#db2777', bg: 'linear-gradient(135deg, #232526, #414345)', price: 800, desc: 'Kefka threatens to destroy the world. 14 playable characters.', rating: 'E', year: 1994, videoUrl: 'https://www.youtube.com/watch?v=sRqFBNWqHWw' },
+        { name: 'Donkey Kong Country', console: 'snes', emoji: '\u{1F43C}', color: '#ffedd5', accent: '#ea580c', bg: 'linear-gradient(135deg, #1a1a00, #2d2d00, #4a4a00)', price: 800, desc: 'Pre-rendered 3D graphics were revolutionary in 1994.', rating: 'E', year: 1994, videoUrl: 'https://www.youtube.com/watch?v=dBWsR7T3N64' },
+        { name: 'Super Mario 64', console: 'n64', emoji: '\u{1F34E}', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #667eea, #764ba2)', price: 1000, desc: 'The game that defined 3D platforming forever.', rating: 'E', year: 1996, videoUrl: 'https://www.youtube.com/watch?v=SwVUz119v2g' },
+        { name: 'The Legend of Zelda: OoT', console: 'n64', emoji: '\u{1F6E1}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #134e5e, #71b280)', price: 1000, desc: 'The greatest adventure of all time. Save Hyrule from Ganondorf.', rating: 'E', year: 1998, videoUrl: 'https://www.youtube.com/watch?v=1orY1rHM8Mo' },
+        { name: 'Mario Kart 64', console: 'n64', emoji: '\u{1F3CE}', color: '#fee2e2', accent: '#dc2626', bg: 'linear-gradient(135deg, #c31432, #240b36)', price: 1000, desc: 'Blue shells and friendship destroyers since 1996.', rating: 'E', year: 1996, videoUrl: 'https://www.youtube.com/watch?v=AyKv0Y1gOcM' },
+        { name: 'GoldenEye 007', console: 'n64', emoji: '\u{1F52B}', color: '#fef3c7', accent: '#d97706', bg: 'linear-gradient(135deg, #1c1c1c, #2d2d2d, #3a3a3a)', price: 1000, desc: 'The FPS that proved console shooters work.', rating: 'T', year: 1997, videoUrl: 'https://www.youtube.com/watch?v=x2s5E8R7yXo' },
+        { name: 'Star Fox 64', console: 'n64', emoji: '\u{1F680}', color: '#e0e7ff', accent: '#4338ca', bg: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', price: 1000, desc: 'Do a barrel roll! On-rails space combat.', rating: 'E', year: 1997, videoUrl: 'https://www.youtube.com/watch?v=S5tO_4rB7t4' },
+        { name: 'Banjo-Kazooie', console: 'n64', emoji: '\u{1F43B}', color: '#ffedd5', accent: '#ea580c', bg: 'linear-gradient(135deg, #56ab2f, #a8e063)', price: 1000, desc: 'Bear and bird duo collect jiggies in magical worlds.', rating: 'E', year: 1998, videoUrl: 'https://www.youtube.com/watch?v=V7Jmg4bR0wE' },
+        { name: 'Pok\u00E9mon Red', console: 'gb', emoji: '\u{1F534}', color: '#fee2e2', accent: '#dc2626', bg: 'linear-gradient(135deg, #8b0000, #c0392b, #e74c3c)', price: 400, desc: 'Gotta catch \'em all! Start your journey as a Pok\u00E9mon trainer.', rating: 'E', year: 1996, videoUrl: 'https://www.youtube.com/watch?v=2t4Mx1O3b1g' },
+        { name: 'Pok\u00E9mon Blue', console: 'gb', emoji: '\u{1F535}', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #000428, #004e92)', price: 400, desc: 'The blue counterpart. Trade to complete your Pok\u00E9dex!', rating: 'E', year: 1996, videoUrl: 'https://www.youtube.com/watch?v=2t4Mx1O3b1g' },
+        { name: 'The Legend of Zelda: LA', console: 'gb', emoji: '\u{1F6E1}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #2c3e50, #4ca1af)', price: 400, desc: 'Link washes up on Koholint Island. Was it all a dream?', rating: 'E', year: 1993, videoUrl: 'https://www.youtube.com/watch?v=sKjRbW9qHJc' },
+        { name: 'Tetris', console: 'gb', emoji: '\u{1F9E9}', color: '#f3e8ff', accent: '#7c3aed', bg: 'linear-gradient(135deg, #fc5c7d, #6a82fb)', price: 400, desc: 'The most addictive puzzle game ever made.', rating: 'E', year: 1989, videoUrl: 'https://www.youtube.com/watch?v=dIYbKjH0xOo' },
+        { name: 'Super Mario Land', console: 'gb', emoji: '\u{1F34E}', color: '#fef3c7', accent: '#d97706', bg: 'linear-gradient(135deg, #4e54c8, #8f94fb)', price: 400, desc: 'Mario\'s portable debut adventure in Sarasaland.', rating: 'E', year: 1989, videoUrl: 'https://www.youtube.com/watch?v=L3wKlS1P1hI' },
+        { name: 'Sonic the Hedgehog', console: 'genesis', emoji: '\u{1F3AC}', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #1e3c72, #2a5298)', price: 600, desc: 'Blast through Green Hill Zone at supersonic speed!', rating: 'E', year: 1991, videoUrl: 'https://www.youtube.com/watch?v=aRvfgHqJ6fM' },
+        { name: 'Sonic the Hedgehog 2', console: 'genesis', emoji: '\u{1F3AC}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #11998e, #38ef7d)', price: 600, desc: 'Meet Tails! The definitive 16-bit platformer.', rating: 'E', year: 1992, videoUrl: 'https://www.youtube.com/watch?v=g8X9WJ2rODc' },
+        { name: 'Streets of Rage 2', console: 'genesis', emoji: '\u{1F44A}', color: '#fee2e2', accent: '#dc2626', bg: 'linear-gradient(135deg, #b92b27, #1565c0)', price: 600, desc: 'The best beat \'em up on any console. Incredible Yuzo Koshiro soundtrack.', rating: 'T', year: 1992, videoUrl: 'https://www.youtube.com/watch?v=k8kIeKqKf8Y' },
+        { name: 'Golden Axe', console: 'genesis', emoji: '\u2694', color: '#ffedd5', accent: '#ea580c', bg: 'linear-gradient(135deg, #3a1c71, #d76d77, #ffaf7b)', price: 600, desc: 'Hack, slash, and ride dragons through a fantasy world.', rating: 'T', year: 1991, videoUrl: 'https://www.youtube.com/watch?v=0Z2fK8sYqD4' },
+        { name: 'Phantasy Star IV', console: 'genesis', emoji: '\u{1F30C}', color: '#e0e7ff', accent: '#4338ca', bg: 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)', price: 600, desc: 'Epic sci-fi RPG with comic-panel cutscenes.', rating: 'T', year: 1993, videoUrl: 'https://www.youtube.com/watch?v=qJ7tE2VbWnI' },
+        { name: 'Crash Bandicoot', console: 'ps1', emoji: '\u{1F34A}', color: '#ffedd5', accent: '#ea580c', bg: 'linear-gradient(135deg, #f12711, #f5af19)', price: 1200, desc: 'Spin through Wumpa Island and stop Dr. Neo Cortex!', rating: 'E', year: 1996, videoUrl: 'https://www.youtube.com/watch?v=MN82XzV0R7k' },
+        { name: 'Final Fantasy VII', console: 'ps1', emoji: '\u2728', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', price: 1200, desc: 'Cloud Strife vs Sephiroth. The JRPG that changed everything.', rating: 'T', year: 1997, videoUrl: 'https://www.youtube.com/watch?v=8yQm3cW8kRg' },
+        { name: 'Spyro the Dragon', console: 'ps1', emoji: '\u{1F409}', color: '#f3e8ff', accent: '#7c3aed', bg: 'linear-gradient(135deg, #5b247a, #1bcedf)', price: 1200, desc: 'Glide and flame your way through 5 magical worlds.', rating: 'E', year: 1998, videoUrl: 'https://www.youtube.com/watch?v=pFEzY7yNt4A' },
+        { name: 'Metal Gear Solid', console: 'ps1', emoji: '\u{1F5E1}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)', price: 1200, desc: 'Tactical espionage action. Snake? Snaaake!', rating: 'M', year: 1998, videoUrl: 'https://www.youtube.com/watch?v=qJzU8DhA4xY' },
     ];
 
     let wiishopCategory = 'all';
@@ -1118,9 +1146,13 @@
 
         let videoHtml = '';
         if (g.videoUrl) {
-            const isYT = g.videoUrl.includes('youtube.com') || g.videoUrl.includes('youtu.be');
-            const embedUrl = isYT ? g.videoUrl.replace('watch?v=', 'embed/') : g.videoUrl;
-            videoHtml = `<div class="gd-video-wrap"><iframe src="${embedUrl}" frameborder="0" allowfullscreen></iframe></div>`;
+            let embedUrl = g.videoUrl;
+            if (g.videoUrl.includes('youtu.be/')) {
+                embedUrl = g.videoUrl.replace('youtu.be/', 'youtube.com/embed/');
+            } else if (g.videoUrl.includes('youtube.com/watch')) {
+                embedUrl = g.videoUrl.replace('watch?v=', 'embed/');
+            }
+            videoHtml = `<div class="gd-video-wrap"><iframe src="${embedUrl}" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe></div>`;
         } else {
             videoHtml = `<div class="gd-video-placeholder">
                 <div class="gd-video-icon">\u{1F3AC}</div>
@@ -1159,10 +1191,14 @@
     function closeGameDetail() {
         const modal = $('#gameDetailModal');
         if (modal) modal.classList.remove('show');
+        const editModal = document.getElementById('gameEditModal');
+        if (editModal) editModal.classList.remove('show');
     }
 
     document.addEventListener('click', e => {
         if (e.target.id === 'gameDetailModal' || e.target.closest('.gd-close')) closeGameDetail();
+        if (e.target.id === 'accountModal') e.target.classList.remove('show');
+        if (e.target.id === 'gameEditModal') e.target.classList.remove('show');
     });
 
     document.addEventListener('click', e => {
@@ -1329,7 +1365,7 @@ function initAccountSystem() {
         if (!s) { el.style.display = 'none'; return; }
         el.style.display = 'flex';
         miiEl.innerHTML = s.mii?.face || '🙂';
-        miiEl.style.background = `linear-gradient(135deg, ${s.mii?.skin || '#fce7f3'}, ${s.mii?.hairColor || '#f3e8ff'})`;
+        miiEl.style.background = `linear-gradient(135deg, ${s.mii?.skin || '#fce7f3'}, ${s.mii?.shirtColor || '#4a5568'})`;
         nameEl.textContent = s.username;
         roleEl.textContent = s.role === 'admin' ? '★ Admin' : 'Member';
         if (s.role === 'admin') roleEl.style.color = '#818cf8';
@@ -1404,7 +1440,7 @@ function initAccountSystem() {
         if (p !== c) { showAcctError('Passwords do not match.'); return; }
         const accounts = getAccounts();
         if (accounts[u]) { showAcctError('Username taken.'); return; }
-        const defaultMii = { face: '🙂', skin: '#fce7f3', hair: 'none', hairColor: '#f3e8ff', eyes: '●●', mouth: '😀', brows: '⌒⌒', acc: '' };
+        const defaultMii = { face: '🙂', skin: '#fce7f3', hair: 'none', hairColor: '#f3e8ff', eyes: '●●', nose: '•', mouth: '😀', brows: '⌒⌒', facialHair: '', glasses: '', hat: '', shirtColor: '#4a5568', bodyType: 'normal', acc: '' };
         accounts[u] = { password: p, role: 'member', mii: defaultMii, created: Date.now() };
         saveAccounts(accounts);
         saveSession({ username: u, role: 'member', mii: defaultMii });
@@ -1484,12 +1520,20 @@ function initMiiMaker() {
     const SKINS = ['#fce7f3','#fde68a','#fcd34d','#fbbf24','#f59e0b','#d4a574','#b08968','#92613e','#6b4423','#4a2c0f','#ffdbb4','#e8c4a0'];
     const HAIRS = ['none','⬛','🟫','🟤','⬛','⬛','🟫','🟧','🟤','⬛','⬜','🟥'];
     const HAIR_COLORS = ['#f3e8ff','#fce7f3','#1e293b','#78350f','#d97706','#ef4444','#8b5cf6','#ec4899','#059669','#f43f5e'];
-    const EYES_SET = ['●●','◉◉','••','⊙⊙','👀','👁👁','😎','googly'];
+    const EYES_SET = ['●●','◉◉','••','⊙⊙','👀','👁','😎','googly'];
+    const NOSE_SET = ['•','△','▽','○','鼻','∘','¬'];
     const MOUTH_SET = ['😀','😃','😄','😁','😆','😏','😐','😋','😛','🤗','😮','🥺'];
     const BROW_SET = ['⌒⌒','▬▬','⌃⌃','---','∧∧','╭╭','▓▓'];
-    const ACC_SET = ['','🎩','👓','✨','🎯','🎵','💫','⭐'];
+    const FACIAL_HAIR = ['','🧔','👨','👨‍🦰','👨‍🦳','🧕','💀','🥸'];
+    const GLASSES_SET = ['','👓','🕶','🥽','🔍','🤓','😎','🥸'];
+    const HAT_SET = ['','🎩','🧢','👑','👒','🎓','⛑','🪖'];
+    const SHIRT_COLORS = ['#4a5568','#dc2626','#2563eb','#059669','#d97706','#7c3aed','#ec4899','#1e293b','#f97316','#06b6d4'];
+    const BODY_TYPES = ['normal','slim','wide','tall','short'];
+    const ACC_SET = ['','✨','🎵','⭐','💫','🔥','💜','🌟'];
 
-    let currentMii = { face: '🙂', skin: '#fce7f3', hair: 'none', hairColor: '#f3e8ff', eyes: '●●', mouth: '😀', brows: '⌒⌒', acc: '' };
+    const DEFAULT_MII = { face: '🙂', skin: '#fce7f3', hair: 'none', hairColor: '#f3e8ff', eyes: '●●', nose: '•', mouth: '😀', brows: '⌒⌒', facialHair: '', glasses: '', hat: '', shirtColor: '#4a5568', bodyType: 'normal', acc: '' };
+
+    let currentMii = { ...DEFAULT_MII };
 
     const miiDisplay = document.getElementById('miiDisplay');
     const miiHead = document.getElementById('miiHead');
@@ -1515,14 +1559,34 @@ function initMiiMaker() {
         });
     }
 
+    function getBodyTransform(type) {
+        switch(type) {
+            case 'slim': return { w: 90, h: 70, r: '25px 25px 0 0' };
+            case 'wide': return { w: 140, h: 70, r: '35px 35px 0 0' };
+            case 'tall': return { w: 110, h: 90, r: '25px 25px 0 0' };
+            case 'short': return { w: 110, h: 50, r: '20px 20px 0 0' };
+            default: return { w: 110, h: 70, r: '30px 30px 0 0' };
+        }
+    }
+
     function renderMii() {
         miiHead.style.background = currentMii.skin;
-        miiHead.innerHTML = `<div style="font-size:28px;line-height:1;margin-top:8px;position:relative;z-index:1;">${currentMii.eyes}</div>
+        miiHead.innerHTML = `
+            <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:16px;z-index:3;">${currentMii.hat || ''}</div>
+            <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:14px;z-index:2;">${currentMii.hair === 'none' ? '' : currentMii.hair}</div>
+            <div style="font-size:12px;position:absolute;top:22px;left:50%;transform:translateX(-50%);z-index:3;">${currentMii.glasses || ''}</div>
+            <div style="font-size:28px;line-height:1;margin-top:8px;position:relative;z-index:1;">${currentMii.eyes}</div>
+            <div style="font-size:14px;position:relative;z-index:1;margin-top:-2px;">${currentMii.nose}</div>
             <div style="font-size:22px;position:relative;z-index:1;">${currentMii.mouth}</div>
             <div style="font-size:16px;position:relative;z-index:1;margin-top:-2px;">${currentMii.brows}</div>
-            <div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:14px;">${currentMii.hair === 'none' ? '' : currentMii.hair}</div>
-            <div style="position:absolute;top:4px;right:-4px;font-size:14px;">${currentMii.acc}</div>`;
-        miiBody.style.background = 'linear-gradient(180deg, #4a5568 0%, #2d3748 100%)';
+            <div style="font-size:14px;position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:1;">${currentMii.facialHair || ''}</div>
+            <div style="position:absolute;top:6px;right:-6px;font-size:14px;z-index:4;">${currentMii.acc}</div>`;
+
+        const bt = getBodyTransform(currentMii.bodyType);
+        miiBody.style.width = bt.w + 'px';
+        miiBody.style.height = bt.h + 'px';
+        miiBody.style.borderRadius = bt.r;
+        miiBody.style.background = currentMii.shirtColor;
     }
 
     function initControls() {
@@ -1531,8 +1595,14 @@ function initMiiMaker() {
         buildRow('miiHairRow', HAIRS, 'hair', false);
         buildRow('miiHairColorRow', HAIR_COLORS, 'hairColor', true);
         buildRow('miiEyesRow', EYES_SET, 'eyes', false);
+        buildRow('miiNoseRow', NOSE_SET, 'nose', false);
         buildRow('miiMouthRow', MOUTH_SET, 'mouth', false);
         buildRow('miiBrowRow', BROW_SET, 'brows', false);
+        buildRow('miiFacialHairRow', FACIAL_HAIR, 'facialHair', false);
+        buildRow('miiGlassesRow', GLASSES_SET, 'glasses', false);
+        buildRow('miiHatRow', HAT_SET, 'hat', false);
+        buildRow('miiShirtRow', SHIRT_COLORS, 'shirtColor', true);
+        buildRow('miiBodyRow', BODY_TYPES.map(t => t.charAt(0).toUpperCase() + t.slice(1)), 'bodyType', false);
         buildRow('miiAccRow', ACC_SET, 'acc', false);
     }
 
@@ -1545,11 +1615,11 @@ function initMiiMaker() {
         let html = '<div class="miimaker-saved-title">Saved Accounts</div><div class="miimaker-saved-grid">';
         names.forEach(name => {
             const a = accounts[name];
-            const mii = a.mii || { face: '🙂', skin: '#fce7f3' };
+            const mii = a.mii || DEFAULT_MII;
             const isActive = session?.username === name;
             const roleLabel = a.role === 'admin' ? '★ Admin' : 'Member';
             html += `<div class="miimaker-saved-card${isActive ? ' active' : ''}" data-user="${name}">
-                <div class="miimaker-saved-avatar" style="background:linear-gradient(135deg,${mii.skin},${mii.hairColor || '#f3e8ff'})">${mii.face}</div>
+                <div class="miimaker-saved-avatar" style="background:linear-gradient(135deg,${mii.skin},${mii.shirtColor || '#4a5568'})">${mii.face}</div>
                 <div class="miimaker-saved-name">${name}</div>
                 <div class="miimaker-saved-role">${roleLabel}</div>
                 <button class="miimaker-saved-delete" data-del="${name}">&times;</button>
@@ -1564,7 +1634,7 @@ function initMiiMaker() {
                 const name = card.dataset.user;
                 const a = accounts[name];
                 localStorage.setItem(SESSION_KEY, JSON.stringify({ username: name, role: a.role, mii: a.mii }));
-                currentMii = { ...(a.mii || { face: '🙂', skin: '#fce7f3', hair: 'none', hairColor: '#f3e8ff', eyes: '●●', mouth: '😀', brows: '⌒⌒', acc: '' }) };
+                currentMii = { ...DEFAULT_MII, ...(a.mii || {}) };
                 document.getElementById('miiNameInput').value = name;
                 renderMii();
                 initControls();
@@ -1595,8 +1665,9 @@ function initMiiMaker() {
         const el = document.getElementById('sidebarUser');
         if (!name || !account) { el.style.display = 'none'; return; }
         el.style.display = 'flex';
-        document.getElementById('sidebarUserMii').innerHTML = account.mii?.face || '🙂';
-        document.getElementById('sidebarUserMii').style.background = `linear-gradient(135deg, ${account.mii?.skin || '#fce7f3'}, ${account.mii?.hairColor || '#f3e8ff'})`;
+        const mii = account.mii || DEFAULT_MII;
+        document.getElementById('sidebarUserMii').innerHTML = mii.face;
+        document.getElementById('sidebarUserMii').style.background = `linear-gradient(135deg, ${mii.skin}, ${mii.shirtColor || '#4a5568'})`;
         document.getElementById('sidebarUserName').textContent = name;
         const roleEl = document.getElementById('sidebarUserRole');
         roleEl.textContent = account.role === 'admin' ? '★ Admin' : 'Member';
@@ -1621,9 +1692,12 @@ function initMiiMaker() {
     document.getElementById('miiRandomBtn')?.addEventListener('click', () => {
         const pick = arr => arr[Math.floor(Math.random() * arr.length)];
         currentMii = {
+            ...DEFAULT_MII,
             face: pick(FACES), skin: pick(SKINS), hair: pick(HAIRS),
-            hairColor: pick(HAIR_COLORS), eyes: pick(EYES_SET),
-            mouth: pick(MOUTH_SET), brows: pick(BROW_SET), acc: pick(ACC_SET)
+            hairColor: pick(HAIR_COLORS), eyes: pick(EYES_SET), nose: pick(NOSE_SET),
+            mouth: pick(MOUTH_SET), brows: pick(BROW_SET), facialHair: pick(FACIAL_HAIR),
+            glasses: pick(GLASSES_SET), hat: pick(HAT_SET), shirtColor: pick(SHIRT_COLORS),
+            bodyType: pick(BODY_TYPES), acc: pick(ACC_SET)
         };
         renderMii();
         initControls();
