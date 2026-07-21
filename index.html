@@ -81,6 +81,9 @@
                     <span class="nav-icon" style="background:#f1f5f9;">&#128218;</span> Library
                     <span class="nav-badge" id="libCount">0</span>
                 </div>
+                <div class="nav-item" data-view="wiishop">
+                    <span class="nav-icon" style="background:#e0f2fe;">&#127978;</span> Wii Shop
+                </div>
                 <div class="nav-item" data-view="settings">
                     <span class="nav-icon" style="background:#f1f5f9;">&#9881;</span> Settings
                 </div>
@@ -293,6 +296,34 @@
                         <p>Load some ROM files and they will appear here.</p>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Wii Shop View -->
+        <div class="view" id="viewWiiShop">
+            <div class="wiishop-header">
+                <div class="wiishop-title-row">
+                    <h2 class="wiishop-title">&#127978; Wii Shop Channel</h2>
+                    <button class="wiishop-music-btn" id="wiishopMusicBtn" title="Toggle Music">&#127925; Music: OFF</button>
+                </div>
+                <p class="wiishop-subtitle">Browse classic titles. Load your own ROM files to play!</p>
+                <div class="wiishop-balance">
+                    <span class="wiishop-points-icon">&#9733;</span>
+                    <span>999,999 Wii Points</span>
+                </div>
+            </div>
+            <div class="wiishop-categories" id="wiishopCategories">
+                <button class="wiishop-cat active" data-cat="all">All</button>
+                <button class="wiishop-cat" data-cat="nes">NES</button>
+                <button class="wiishop-cat" data-cat="snes">SNES</button>
+                <button class="wiishop-cat" data-cat="n64">N64</button>
+                <button class="wiishop-cat" data-cat="gb">Game Boy</button>
+                <button class="wiishop-cat" data-cat="genesis">Genesis</button>
+                <button class="wiishop-cat" data-cat="ps1">PS1</button>
+            </div>
+            <div class="wiishop-grid" id="wiishopGrid"></div>
+            <div class="wiishop-footer">
+                <p>&#9432; ROM files are not included. Click a game to upload your own legally obtained ROM.</p>
             </div>
         </div>
 

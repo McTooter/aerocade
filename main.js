@@ -5,7 +5,7 @@
     const canvas = $('#emulatorCanvas');
     const ctx = canvas.getContext('2d');
     const romFileInput = $('#romFileInput');
-    const views = { home: $('#viewHome'), library: $('#viewLibrary'), settings: $('#viewSettings'), emulator: $('#viewEmulator') };
+    const views = { home: $('#viewHome'), library: $('#viewLibrary'), settings: $('#viewSettings'), emulator: $('#viewEmulator'), wiishop: $('#viewWiiShop') };
 
     let activeConsole = null, activeEmulator = null, running = false, speed = 1;
     let animFrameId = null, lastTime = 0, framesThisSec = 0, fpsTime = 0;
@@ -566,7 +566,7 @@
         $$('.nav-item').forEach(n => n.classList.remove('active'));
         let nav = $(`.nav-item[data-view="${id}"]`);
         if (nav) nav.classList.add('active');
-        const titles = { home: 'Home', library: 'Library', settings: 'Settings', emulator: 'Emulator' };
+        const titles = { home: 'Home', library: 'Library', settings: 'Settings', emulator: 'Emulator', wiishop: 'Wii Shop' };
         $('#topbarTitle').textContent = titles[id] || 'Home';
         $('#topbarBreadcrumb').textContent = titles[id] || 'Home';
         let showEmu = id === 'emulator';
@@ -896,6 +896,7 @@
         if (!gameLibrary.find(g => g.name === name && g.console === consoleId)) {
             gameLibrary.push({ name, console: consoleId });
             renderLibrary();
+            renderShopGrid(wiishopCategory);
         }
     }
 
@@ -950,6 +951,189 @@
         }, 3000);
     }
 
+    // ==================== WII SHOP ====================
+    const SHOP_GAMES = [
+        { name: 'Super Mario Bros.', console: 'nes', emoji: '\u{1F34E}', color: '#fee2e2', price: 500 },
+        { name: 'The Legend of Zelda', console: 'nes', emoji: '\u{1F6E1}', color: '#d1fae5', price: 500 },
+        { name: 'Metroid', console: 'nes', emoji: '\u{1F47E}', color: '#dbeafe', price: 500 },
+        { name: 'Mega Man 2', console: 'nes', emoji: '\u{1F916}', color: '#dbeafe', price: 500 },
+        { name: 'Castlevania', console: 'nes', emoji: '\u{1F3DB}', color: '#e0e7ff', price: 500 },
+        { name: 'Contra', console: 'nes', emoji: '\u{1F3AF}', color: '#fee2e2', price: 500 },
+        { name: 'Super Mario World', console: 'snes', emoji: '\u{1F34E}', color: '#f3e8ff', price: 800 },
+        { name: 'The Legend of Zelda: ALTTP', console: 'snes', emoji: '\u{1F6E1}', color: '#d1fae5', price: 800 },
+        { name: 'Super Metroid', console: 'snes', emoji: '\u{1F47E}', color: '#e0e7ff', price: 800 },
+        { name: 'Chrono Trigger', console: 'snes', emoji: '\u{269B}', color: '#fef3c7', price: 800 },
+        { name: 'Final Fantasy VI', console: 'snes', emoji: '\u{2728}', color: '#fce7f3', price: 800 },
+        { name: 'Donkey Kong Country', console: 'snes', emoji: '\u{1F43C}', color: '#ffedd5', price: 800 },
+        { name: 'Super Mario 64', console: 'n64', emoji: '\u{1F34E}', color: '#dbeafe', price: 1000 },
+        { name: 'The Legend of Zelda: OoT', console: 'n64', emoji: '\u{1F6E1}', color: '#d1fae5', price: 1000 },
+        { name: 'Mario Kart 64', console: 'n64', emoji: '\u{1F3CE}', color: '#fee2e2', price: 1000 },
+        { name: 'GoldenEye 007', console: 'n64', emoji: '\u{1F52B}', color: '#fef3c7', price: 1000 },
+        { name: 'Star Fox 64', console: 'n64', emoji: '\u{1F680}', color: '#e0e7ff', price: 1000 },
+        { name: 'Banjo-Kazooie', console: 'n64', emoji: '\u{1F43B}', color: '#ffedd5', price: 1000 },
+        { name: 'Pok\u00E9mon Red', console: 'gb', emoji: '\u{1F534}', color: '#fee2e2', price: 400 },
+        { name: 'Pok\u00E9mon Blue', console: 'gb', emoji: '\u{1F535}', color: '#dbeafe', price: 400 },
+        { name: 'The Legend of Zelda: LA', console: 'gb', emoji: '\u{1F6E1}', color: '#d1fae5', price: 400 },
+        { name: 'Tetris', console: 'gb', emoji: '\u{1F9E9}', color: '#f3e8ff', price: 400 },
+        { name: 'Super Mario Land', console: 'gb', emoji: '\u{1F34E}', color: '#fef3c7', price: 400 },
+        { name: 'Sonic the Hedgehog', console: 'genesis', emoji: '\u{1F3AC}', color: '#dbeafe', price: 600 },
+        { name: 'Sonic the Hedgehog 2', console: 'genesis', emoji: '\u{1F3AC}', color: '#d1fae5', price: 600 },
+        { name: 'Streets of Rage 2', console: 'genesis', emoji: '\u{1F44A}', color: '#fee2e2', price: 600 },
+        { name: 'Golden Axe', console: 'genesis', emoji: '\u2694', color: '#ffedd5', price: 600 },
+        { name: 'Phantasy Star IV', console: 'genesis', emoji: '\u{1F30C}', color: '#e0e7ff', price: 600 },
+        { name: 'Crash Bandicoot', console: 'ps1', emoji: '\u{1F34A}', color: '#ffedd5', price: 1200 },
+        { name: 'Final Fantasy VII', console: 'ps1', emoji: '\u2728', color: '#dbeafe', price: 1200 },
+        { name: 'Spyro the Dragon', console: 'ps1', emoji: '\u{1F409}', color: '#f3e8ff', price: 1200 },
+        { name: 'Metal Gear Solid', console: 'ps1', emoji: '\u{1F5E1}', color: '#d1fae5', price: 1200 },
+    ];
+
+    let wiishopCategory = 'all';
+    let wiishopAudioCtx = null;
+    let wiishopMusicPlaying = false;
+    let wiishopMusicNodes = [];
+
+    function renderShopGrid(filter) {
+        wiishopCategory = filter || 'all';
+        const grid = $('#wiishopGrid');
+        if (!grid) return;
+        const games = wiishopCategory === 'all' ? SHOP_GAMES : SHOP_GAMES.filter(g => g.console === wiishopCategory);
+        grid.innerHTML = games.map(g => {
+            const c = CONSOLES[g.console];
+            const loaded = gameLibrary.find(l => l.name === g.name);
+            const runningGame = loaded && running && activeConsole === g.console;
+            let btnClass = 'get', btnText = 'Get';
+            if (runningGame) { btnClass = 'playing'; btnText = 'Playing'; }
+            else if (loaded) { btnClass = 'loaded'; btnText = 'Loaded'; }
+            return `<div class="wiishop-card" data-console="${g.console}" data-name="${g.name}">
+                <div class="wiishop-card-art" style="background:${g.color}">${g.emoji}</div>
+                <div class="wiishop-card-body">
+                    <div class="wiishop-card-name">${g.name}</div>
+                    <div class="wiishop-card-console">${c ? c.name : g.console}</div>
+                    <div class="wiishop-card-bottom">
+                        <span class="wiishop-card-price">${g.price.toLocaleString()}</span>
+                        <button class="wiishop-card-btn ${btnClass}" data-console="${g.console}" data-name="${g.name}">${btnText}</button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        grid.querySelectorAll('.wiishop-card-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const con = btn.dataset.console;
+                if (btn.classList.contains('loaded') || btn.classList.contains('playing')) {
+                    activeConsole = con;
+                    showView('library');
+                    return;
+                }
+                activeConsole = con;
+                romFileInput.accept = (CONSOLES[con]?.exts || []).join(',');
+                romFileInput.click();
+            });
+        });
+
+        grid.querySelectorAll('.wiishop-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const con = card.dataset.console;
+                activeConsole = con;
+                showView('library');
+            });
+        });
+    }
+
+    $('#wiishopCategories')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.wiishop-cat');
+        if (!btn) return;
+        $$('.wiishop-cat').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderShopGrid(btn.dataset.cat);
+    });
+
+    // ==================== JAZZY MUSIC (Web Audio API) ====================
+    function createJazzyMusic() {
+        if (wiishopAudioCtx) return;
+        wiishopAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = wiishopAudioCtx;
+
+        function playNote(freq, start, dur, gain, type) {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = type || 'sine';
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+            g.gain.setValueAtTime(0, ctx.currentTime + start);
+            g.gain.linearRampToValueAtTime(gain, ctx.currentTime + start + 0.02);
+            g.gain.setValueAtTime(gain, ctx.currentTime + start + dur - 0.05);
+            g.gain.linearRampToValueAtTime(0, ctx.currentTime + start + dur);
+            osc.connect(g).connect(ctx.destination);
+            osc.start(ctx.currentTime + start);
+            osc.stop(ctx.currentTime + start + dur);
+            wiishopMusicNodes.push(osc);
+        }
+
+        function playChord(notes, start, dur, gain, type) {
+            notes.forEach(f => playNote(f, start, dur, gain / notes.length, type));
+        }
+
+        const jazzChords = [
+            [261.63, 329.63, 392.00, 466.16],
+            [293.66, 369.99, 440.00, 523.25],
+            [220.00, 277.18, 329.63, 415.30],
+            [246.94, 311.13, 369.99, 466.16],
+            [261.63, 311.13, 392.00, 466.16],
+            [196.00, 246.94, 293.66, 369.99],
+        ];
+
+        const bassNotes = [130.81, 146.83, 110.00, 123.47, 130.81, 98.00];
+
+        function scheduleLoop() {
+            const chordDur = 0.8;
+            const loopLen = jazzChords.length * chordDur;
+
+            for (let rep = 0; rep < 100; rep++) {
+                const offset = rep * loopLen;
+                jazzChords.forEach((chord, i) => {
+                    const t = offset + i * chordDur;
+                    playChord(chord, t, chordDur - 0.05, 0.06, 'sine');
+                    playNote(bassNotes[i], t, chordDur - 0.1, 0.1, 'triangle');
+                    playNote(bassNotes[i] * 2, t + 0.05, chordDur * 0.4 - 0.05, 0.04, 'triangle');
+                    if (Math.random() > 0.5) {
+                        const melodyOffset = chordDur * 0.5;
+                        const melodyNote = chord[Math.floor(Math.random() * chord.length)] * (Math.random() > 0.5 ? 2 : 1);
+                        playNote(melodyNote, t + melodyOffset, chordDur * 0.3, 0.03, 'sine');
+                    }
+                });
+            }
+
+            setTimeout(() => {
+                if (wiishopMusicPlaying) scheduleLoop();
+            }, (loopLen * 95) * 1000);
+        }
+
+        scheduleLoop();
+    }
+
+    function stopJazzyMusic() {
+        if (wiishopAudioCtx) {
+            wiishopAudioCtx.close().catch(() => {});
+            wiishopAudioCtx = null;
+        }
+        wiishopMusicNodes = [];
+        wiishopMusicPlaying = false;
+        const btn = $('#wiishopMusicBtn');
+        if (btn) btn.innerHTML = '&#127925; Music: OFF';
+    }
+
+    $('#wiishopMusicBtn')?.addEventListener('click', () => {
+        if (wiishopMusicPlaying) {
+            stopJazzyMusic();
+        } else {
+            wiishopMusicPlaying = true;
+            createJazzyMusic();
+            const btn = $('#wiishopMusicBtn');
+            if (btn) btn.innerHTML = '&#127925; Music: ON';
+        }
+    });
+
     // ==================== INIT ====================
     createBubbles();
     createClouds();
@@ -974,5 +1158,6 @@
     init3DCard();
     buildCarousel();
     renderLibrary();
+    renderShopGrid('all');
     showToast('Welcome! Load a ROM to begin.', 'info');
 })();
