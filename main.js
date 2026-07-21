@@ -1412,7 +1412,7 @@ function initProfile() {
         if (!s) { el.style.display = 'none'; return; }
         el.style.display = 'flex';
         miiEl.innerHTML = renderMiiSvg(s.mii || DEFAULT_MII, 36, 42);
-        miiEl.style.background = `linear-gradient(135deg, ${s.mii?.skin || '#fce7f3'}, ${s.mii?.shirtColor || '#4a5568'})`;
+        miiEl.style.background = 'linear-gradient(180deg, #e3f2fd, #90caf9)';
         nameEl.textContent = s.username;
         roleEl.textContent = s.role === 'admin' ? '★ Admin' : 'Member';
         roleEl.style.color = s.role === 'admin' ? '#818cf8' : '';
@@ -1423,127 +1423,247 @@ function initProfile() {
         if (editBtn) editBtn.style.display = isAdmin() ? 'block' : 'none';
     }
 
-    // === SVG Mii Renderer ===
+    // === SVG Mii Renderer (Wii-style 3D) ===
+    let _miiUid = 0;
     function renderMiiSvg(mii, w, h) {
         w = w || 180; h = h || 220;
         const m = { ...DEFAULT_MII, ...mii };
+        const uid = 'm' + (++_miiUid);
         const skin = m.skin;
         const shirt = m.shirtColor || m.bodyColor || '#4a5568';
-        const bodyH = { normal: 70, slim: 55, wide: 80, tall: 90, short: 45 }[m.bodyType] || 70;
-        const bodyW = { normal: 100, slim: 75, wide: 130, tall: 100, short: 100 }[m.bodyType] || 100;
-        const headCX = w / 2, headCY = 75, headR = 50;
+        const hairC = m.hairColor;
+        const browC = darken(hairC, 8);
+
+        // Mii proportions: head is huge, body is small rounded blob
+        const headCX = w / 2;
+        const headCY = h * 0.34;
+        const headRX = w * 0.28;
+        const headRY = headRX * 1.05;
+        const bodyW = w * 0.42;
+        const bodyH = h * 0.28;
+        const bodyX = headCX - bodyW / 2;
+        const bodyY = h - bodyH - h * 0.03;
+
+        // Neck area (skin color bridge between head and body)
+        const neckTop = headCY + headRY - 6;
+        const neckBot = bodyY + 4;
 
         let svg = `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
-        svg += `<defs><radialGradient id="sk${w}" cx="40%" cy="35%"><stop offset="0%" stop-color="${lighten(skin,25)}"/><stop offset="100%" stop-color="${skin}"/></radialGradient></defs>`;
+        svg += `<defs>`;
+        // 3D head gradient - sphere-like shading
+        svg += `<radialGradient id="${uid}sk" cx="38%" cy="32%" r="65%" fx="35%" fy="28%">`;
+        svg += `<stop offset="0%" stop-color="${lighten(skin, 30)}"/>`;
+        svg += `<stop offset="45%" stop-color="${lighten(skin, 10)}"/>`;
+        svg += `<stop offset="100%" stop-color="${darken(skin, 8)}"/>`;
+        svg += `</radialGradient>`;
+        // 3D body gradient
+        svg += `<linearGradient id="${uid}bd" x1="0" y1="0" x2="0" y2="1">`;
+        svg += `<stop offset="0%" stop-color="${lighten(shirt, 12)}"/>`;
+        svg += `<stop offset="60%" stop-color="${shirt}"/>`;
+        svg += `<stop offset="100%" stop-color="${darken(shirt, 15)}"/>`;
+        svg += `</linearGradient>`;
+        // Hair highlight
+        svg += `<linearGradient id="${uid}hr" x1="0.3" y1="0" x2="0.7" y2="1">`;
+        svg += `<stop offset="0%" stop-color="${lighten(hairC, 18)}"/>`;
+        svg += `<stop offset="100%" stop-color="${hairC}"/>`;
+        svg += `</linearGradient>`;
+        // Drop shadow filter
+        svg += `<filter id="${uid}ds" x="-20%" y="-10%" width="140%" height="140%">`;
+        svg += `<feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.18)"/>`;
+        svg += `</filter>`;
+        // Head inner shadow for 3D rim
+        svg += `<radialGradient id="${uid}hs" cx="50%" cy="50%" r="50%">`;
+        svg += `<stop offset="82%" stop-color="transparent"/>`;
+        svg += `<stop offset="100%" stop-color="${darken(skin, 18)}" stop-opacity="0.25"/>`;
+        svg += `</radialGradient>`;
+        svg += `</defs>`;
 
-        // Body
-        const bx = (w - bodyW) / 2, by = h - bodyH;
-        svg += `<path d="M${bx + 15},${by} Q${bx},${by + 15} ${bx},${by + bodyH * 0.6} L${bx},${by + bodyH} L${bx + bodyW},${by + bodyH} L${bx + bodyW},${by + bodyH * 0.6} Q${bx + bodyW},${by + 15} ${bx + bodyW - 15},${by} Z" fill="${shirt}" rx="12"/>`;
+        // === BODY (rounded trapezoid, 3D shaded) ===
+        svg += `<path d="M${bodyX + bodyW * 0.15},${bodyY}`;
+        svg += ` Q${bodyX},${bodyY + 8} ${bodyX + 2},${bodyY + bodyH * 0.7}`;
+        svg += ` L${bodyX + 4},${bodyY + bodyH}`;
+        svg += ` L${bodyX + bodyW - 4},${bodyY + bodyH}`;
+        svg += ` L${bodyX + bodyW - 2},${bodyY + bodyH * 0.7}`;
+        svg += ` Q${bodyX + bodyW},${bodyY + 8} ${bodyX + bodyW * 0.85},${bodyY}`;
+        svg += ` Z" fill="url(#${uid}bd)" stroke="${darken(shirt, 20)}" stroke-width="0.8"/>`;
+        // Shirt collar detail
+        svg += `<path d="M${headCX - 6},${bodyY + 3} L${headCX},${bodyY + 10} L${headCX + 6},${bodyY + 3}" fill="none" stroke="${darken(shirt, 25)}" stroke-width="0.8" opacity="0.5"/>`;
 
-        // Head
-        svg += `<ellipse cx="${headCX}" cy="${headCY}" rx="${headR}" ry="${headR * 1.05}" fill="url(#sk${w})" stroke="${darken(skin,15)}" stroke-width="1"/>`;
+        // === NECK (skin bridge) ===
+        svg += `<ellipse cx="${headCX}" cy="${(neckTop + neckBot) / 2}" rx="12" ry="${(neckBot - neckTop) / 2 + 2}" fill="${darken(skin, 5)}"/>`;
 
-        // Hair
-        const hairPaths = {
+        // === HEAD (3D sphere) ===
+        // Head shadow on body
+        svg += `<ellipse cx="${headCX}" cy="${neckTop + 4}" rx="${headRX * 0.8}" ry="6" fill="rgba(0,0,0,0.08)"/>`;
+        // Main head sphere
+        svg += `<ellipse cx="${headCX}" cy="${headCY}" rx="${headRX}" ry="${headRY}" fill="url(#${uid}sk)" filter="url(#${uid}ds)"/>`;
+        // 3D rim shading overlay
+        svg += `<ellipse cx="${headCX}" cy="${headCY}" rx="${headRX}" ry="${headRY}" fill="url(#${uid}hs)"/>`;
+        // Specular highlight (shiny spot)
+        svg += `<ellipse cx="${headCX - headRX * 0.18}" cy="${headCY - headRY * 0.28}" rx="${headRX * 0.22}" ry="${headRY * 0.15}" fill="white" opacity="0.28"/>`;
+        // Subtle cheek blush
+        svg += `<ellipse cx="${headCX - headRX * 0.55}" cy="${headCY + headRY * 0.25}" rx="8" ry="5" fill="#ffb3b3" opacity="0.2"/>`;
+        svg += `<ellipse cx="${headCX + headRX * 0.55}" cy="${headCY + headRY * 0.25}" rx="8" ry="5" fill="#ffb3b3" opacity="0.2"/>`;
+
+        // === HAIR (bold geometric Mii-style shapes) ===
+        const hairW = headRX + 4;
+        const hairTop = headCY - headRY;
+        const hcx = headCX;
+        const hairDefs = {
             none: '',
-            short: `<path d="M${headCX - 45},${headCY - 20} Q${headCX - 50},${headCY - 55} ${headCX},${headCY - 58} Q${headCX + 50},${headCY - 55} ${headCX + 45},${headCY - 20}" fill="${m.hairColor}" />`,
-            medium: `<path d="M${headCX - 48},${headCY - 5} Q${headCX - 52},${headCY - 58} ${headCX},${headCY - 62} Q${headCX + 52},${headCY - 58} ${headCX + 48},${headCY - 5} L${headCX + 46},${headCY + 15} Q${headCX + 40},${headCY + 5} ${headCX},${headCY + 2} Q${headCX - 40},${headCY + 5} ${headCX - 46},${headCY + 15} Z" fill="${m.hairColor}"/>`,
-            long: `<path d="M${headCX - 48},${headCY - 5} Q${headCX - 52},${headCY - 58} ${headCX},${headCY - 62} Q${headCX + 52},${headCY - 58} ${headCX + 48},${headCY - 5} L${headCX + 50},${headCY + 40} Q${headCX + 42},${headCY + 25} ${headCX},${headCY + 22} Q${headCX - 42},${headCY + 25} ${headCX - 50},${headCY + 40} Z" fill="${m.hairColor}"/>`,
-            ponytail: `<path d="M${headCX - 45},${headCY - 20} Q${headCX - 50},${headCY - 55} ${headCX},${headCY - 58} Q${headCX + 50},${headCY - 55} ${headCX + 45},${headCY - 20}" fill="${m.hairColor}"/><path d="M${headCX + 35},${headCY - 30} Q${headCX + 60},${headCY - 25} ${headCX + 55},${headCY + 30} Q${headCX + 50},${headCY + 40} ${headCX + 42},${headCY + 30}" fill="${m.hairColor}"/>`,
-            bun: `<path d="M${headCX - 45},${headCY - 20} Q${headCX - 50},${headCY - 55} ${headCX},${headCY - 58} Q${headCX + 50},${headCY - 55} ${headCX + 45},${headCY - 20}" fill="${m.hairColor}"/><circle cx="${headCX}" cy="${headCY - 58}" r="15" fill="${m.hairColor}"/>`,
-            spiky: `<path d="M${headCX - 45},${headCY - 15} L${headCX - 40},${headCY - 60} L${headCX - 25},${headCY - 30} L${headCX - 15},${headCY - 68} L${headCX},${headCY - 35} L${headCX + 15},${headCY - 68} L${headCX + 25},${headCY - 30} L${headCX + 40},${headCY - 60} L${headCX + 45},${headCY - 15}" fill="${m.hairColor}"/>`,
-            curly: `<path d="M${headCX - 48},${headCY - 15} Q${headCX - 55},${headCY - 55} ${headCX},${headCY - 60} Q${headCX + 55},${headCY - 55} ${headCX + 48},${headCY - 15}" fill="${m.hairColor}"/><circle cx="${headCX - 35}" cy="${headCY - 40}" r="12" fill="${m.hairColor}"/><circle cx="${headCX + 35}" cy="${headCY - 40}" r="12" fill="${m.hairColor}"/><circle cx="${headCX}" cy="${headCY - 55}" r="13" fill="${m.hairColor}"/>`,
-            mohawk: `<path d="M${headCX - 8},${headCY - 25} Q${headCX - 12},${headCY - 75} ${headCX},${headCY - 80} Q${headCX + 12},${headCY - 75} ${headCX + 8},${headCY - 25}" fill="${m.hairColor}"/>`,
-            buzzcut: `<path d="M${headCX - 42},${headCY - 25} Q${headCX - 48},${headCY - 52} ${headCX},${headCY - 55} Q${headCX + 48},${headCY - 52} ${headCX + 42},${headCY - 25}" fill="${m.hairColor}" opacity="0.7"/>`
+            short: `<path d="M${hcx - hairW},${headCY - headRY * 0.35} Q${hcx - hairW - 3},${hairTop - 10} ${hcx},${hairTop - 14} Q${hcx + hairW + 3},${hairTop - 10} ${hcx + hairW},${headCY - headRY * 0.35}" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/>`,
+            medium: `<path d="M${hcx - hairW - 2},${headCY - headRY * 0.1} Q${hcx - hairW - 4},${hairTop - 14} ${hcx},${hairTop - 16} Q${hcx + hairW + 4},${hairTop - 14} ${hcx + hairW + 2},${headCY - headRY * 0.1} L${hcx + hairW - 5},${headCY + 6} Q${hcx + 20},${headCY - 2} ${hcx},${headCY - 4} Q${hcx - 20},${headCY - 2} ${hcx - hairW + 5},${headCY + 6} Z" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/>`,
+            long: `<path d="M${hcx - hairW - 3},${headCY - headRY * 0.1} Q${hcx - hairW - 5},${hairTop - 14} ${hcx},${hairTop - 18} Q${hcx + hairW + 5},${hairTop - 14} ${hcx + hairW + 3},${headCY - headRY * 0.1} L${hcx + hairW + 5},${headCY + headRY * 0.8} Q${hcx + 30},${headCY + headRY * 0.4} ${hcx},${headCY + headRY * 0.35} Q${hcx - 30},${headCY + headRY * 0.4} ${hcx - hairW - 5},${headCY + headRY * 0.8} Z" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/>`,
+            ponytail: `<path d="M${hcx - hairW},${headCY - headRY * 0.35} Q${hcx - hairW - 3},${hairTop - 10} ${hcx},${hairTop - 14} Q${hcx + hairW + 3},${hairTop - 10} ${hcx + hairW},${headCY - headRY * 0.35}" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/><path d="M${hcx + hairW - 8},${hairTop + 4} Q${hcx + hairW + 18},${hairTop + 10} ${hcx + hairW + 15},${headCY + headRY * 0.6} Q${hcx + hairW + 10},${headCY + headRY * 0.8} ${hcx + hairW},${headCY + headRY * 0.55}" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/>`,
+            bun: `<path d="M${hcx - hairW},${headCY - headRY * 0.35} Q${hcx - hairW - 3},${hairTop - 10} ${hcx},${hairTop - 14} Q${hcx + hairW + 3},${hairTop - 10} ${hcx + hairW},${headCY - headRY * 0.35}" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/><circle cx="${hcx}" cy="${hairTop - 12}" r="12" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/>`,
+            spiky: `<path d="M${hcx - hairW - 2},${headCY - headRY * 0.2} L${hcx - hairW + 5},${hairTop - 18} L${hcx - 22},${headCY - headRY * 0.5} L${hcx - 10},${hairTop - 28} L${hcx},${headCY - headRY * 0.45} L${hcx + 10},${hairTop - 28} L${hcx + 22},${headCY - headRY * 0.5} L${hcx + hairW - 5},${hairTop - 18} L${hcx + hairW + 2},${headCY - headRY * 0.2}" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/>`,
+            curly: `<path d="M${hcx - hairW - 4},${headCY - headRY * 0.05} Q${hcx - hairW - 6},${hairTop - 12} ${hcx},${hairTop - 16} Q${hcx + hairW + 6},${hairTop - 12} ${hcx + hairW + 4},${headCY - headRY * 0.05}" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/><circle cx="${hcx - hairW + 8}" cy="${hairTop + 8}" r="10" fill="url(#${uid}hr)"/><circle cx="${hcx + hairW - 8}" cy="${hairTop + 8}" r="10" fill="url(#${uid}hr)"/><circle cx="${hcx - 18}" cy="${hairTop - 4}" r="11" fill="url(#${uid}hr)"/><circle cx="${hcx + 18}" cy="${hairTop - 4}" r="11" fill="url(#${uid}hr)"/><circle cx="${hcx}" cy="${hairTop - 12}" r="11" fill="url(#${uid}hr)"/>`,
+            mohawk: `<path d="M${hcx - 7},${headCY - headRY * 0.3} Q${hcx - 9},${hairTop - 28} ${hcx},${hairTop - 35} Q${hcx + 9},${hairTop - 28} ${hcx + 7},${headCY - headRY * 0.3}" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/>`,
+            buzzcut: `<path d="M${hcx - hairW + 2},${headCY - headRY * 0.38} Q${hcx - hairW - 1},${hairTop - 6} ${hcx},${hairTop - 8} Q${hcx + hairW + 1},${hairTop - 6} ${hcx + hairW - 2},${headCY - headRY * 0.38}" fill="url(#${uid}hr)" opacity="0.65" stroke="${darken(hairC, 15)}" stroke-width="0.3"/>`
         };
-        svg += hairPaths[m.hair] || '';
+        svg += hairDefs[m.hair] || '';
 
-        // Eyes
-        const eyeOffX = 18, eyeY = headCY + 2;
-        const eyeShapes = {
-            normal: (x, y) => `<ellipse cx="${x}" cy="${y}" rx="6" ry="7" fill="white" stroke="#334155" stroke-width="1"/><circle cx="${x + 1}" cy="${y + 1}" r="4" fill="${m.eyeColor}"/><circle cx="${x + 2.5}" cy="${y - 1}" r="1.5" fill="white"/>`,
-            big: (x, y) => `<ellipse cx="${x}" cy="${y}" rx="8" ry="9" fill="white" stroke="#334155" stroke-width="1"/><circle cx="${x + 1}" cy="${y + 1}" r="5.5" fill="${m.eyeColor}"/><circle cx="${x + 3}" cy="${y - 2}" r="2" fill="white"/>`,
-            small: (x, y) => `<ellipse cx="${x}" cy="${y}" rx="4" ry="4.5" fill="white" stroke="#334155" stroke-width="1"/><circle cx="${x + 0.5}" cy="${y + 0.5}" r="2.8" fill="${m.eyeColor}"/><circle cx="${x + 1.5}" cy="${y - 0.5}" r="1" fill="white"/>`,
-            narrow: (x, y) => `<ellipse cx="${x}" cy="${y}" rx="7" ry="3.5" fill="white" stroke="#334155" stroke-width="1"/><ellipse cx="${x + 1}" cy="${y}" rx="3" ry="2.8" fill="${m.eyeColor}"/>`,
-            wide: (x, y) => `<circle cx="${x}" cy="${y}" r="9" fill="white" stroke="#334155" stroke-width="1"/><circle cx="${x + 1}" cy="${y + 1}" r="6" fill="${m.eyeColor}"/><circle cx="${x + 3}" cy="${y - 2}" r="2.5" fill="white"/>`,
-            sleepy: (x, y) => `<ellipse cx="${x}" cy="${y + 2}" rx="6" ry="4" fill="white" stroke="#334155" stroke-width="1"/><circle cx="${x}" cy="${y + 3}" r="3.5" fill="${m.eyeColor}"/><path d="M${x - 7},${y - 3} Q${x},${y - 5} ${x + 7},${y - 2}" fill="none" stroke="#334155" stroke-width="1.5"/>`,
-            bright: (x, y) => `<ellipse cx="${x}" cy="${y}" rx="7" ry="8" fill="white" stroke="#334155" stroke-width="1"/><circle cx="${x}" cy="${y}" r="5" fill="${m.eyeColor}"/><circle cx="${x + 2}" cy="${y - 2}" r="2.5" fill="white"/><circle cx="${x - 1.5}" cy="${y + 2}" r="1" fill="white" opacity="0.6"/>`
+        // === EYEBROWS (thick Mii-style arcs) ===
+        const browGap = headRX * 0.42;
+        const browY2 = headCY - headRY * 0.02;
+        const browW2 = headRX * 0.32;
+        const browDefs = {
+            normal: `<path d="M${hcx - browGap - browW2},${browY2} Q${hcx - browGap},${browY2 - 6} ${hcx - browGap + browW2},${browY2}" fill="none" stroke="${browC}" stroke-width="2.5" stroke-linecap="round"/><path d="M${hcx + browGap - browW2},${browY2} Q${hcx + browGap},${browY2 - 6} ${hcx + browGap + browW2},${browY2}" fill="none" stroke="${browC}" stroke-width="2.5" stroke-linecap="round"/>`,
+            thick: `<path d="M${hcx - browGap - browW2 - 1},${browY2 + 1} Q${hcx - browGap},${browY2 - 7} ${hcx - browGap + browW2 + 1},${browY2 + 1}" fill="${browC}"/><path d="M${hcx + browGap - browW2 - 1},${browY2 + 1} Q${hcx + browGap},${browY2 - 7} ${hcx + browGap + browW2 + 1},${browY2 + 1}" fill="${browC}"/>`,
+            thin: `<path d="M${hcx - browGap - browW2},${browY2} Q${hcx - browGap},${browY2 - 5} ${hcx - browGap + browW2},${browY2}" fill="none" stroke="${browC}" stroke-width="1.2" stroke-linecap="round"/><path d="M${hcx + browGap - browW2},${browY2} Q${hcx + browGap},${browY2 - 5} ${hcx + browGap + browW2},${browY2}" fill="none" stroke="${browC}" stroke-width="1.2" stroke-linecap="round"/>`,
+            arched: `<path d="M${hcx - browGap - browW2 - 1},${browY2 + 2} Q${hcx - browGap},${browY2 - 10} ${hcx - browGap + browW2 + 1},${browY2 + 2}" fill="none" stroke="${browC}" stroke-width="2" stroke-linecap="round"/><path d="M${hcx + browGap - browW2 - 1},${browY2 + 2} Q${hcx + browGap},${browY2 - 10} ${hcx + browGap + browW2 + 1},${browY2 + 2}" fill="none" stroke="${browC}" stroke-width="2" stroke-linecap="round"/>`,
+            flat: `<line x1="${hcx - browGap - browW2}" y1="${browY2}" x2="${hcx - browGap + browW2}" y2="${browY2}" stroke="${browC}" stroke-width="3" stroke-linecap="round"/><line x1="${hcx + browGap - browW2}" y1="${browY2}" x2="${hcx + browGap + browW2}" y2="${browY2}" stroke="${browC}" stroke-width="3" stroke-linecap="round"/>`,
+            angry: `<path d="M${hcx - browGap - browW2},${browY2 + 5} L${hcx - browGap + browW2},${browY2 - 3}" stroke="${browC}" stroke-width="2.5" stroke-linecap="round"/><path d="M${hcx + browGap - browW2},${browY2 - 3} L${hcx + browGap + browW2},${browY2 + 5}" stroke="${browC}" stroke-width="2.5" stroke-linecap="round"/>`
         };
-        const drawEye = eyeShapes[m.eyeShape] || eyeShapes.normal;
-        svg += drawEye(headCX - eyeOffX, eyeY);
-        svg += drawEye(headCX + eyeOffX, eyeY);
+        svg += browDefs[m.brows] || browDefs.normal;
 
-        // Brows
-        const browY = eyeY - 14;
-        const brows = {
-            normal: `<path d="M${headCX - 25},${browY} Q${headCX - 18},${browY - 5} ${headCX - 11},${browY}" fill="none" stroke="${darken(m.hairColor, 10)}" stroke-width="2" stroke-linecap="round"/><path d="M${headCX + 11},${browY} Q${headCX + 18},${browY - 5} ${headCX + 25},${browY}" fill="none" stroke="${darken(m.hairColor, 10)}" stroke-width="2" stroke-linecap="round"/>`,
-            thick: `<path d="M${headCX - 26},${browY + 1} Q${headCX - 18},${browY - 6} ${headCX - 10},${browY + 1}" fill="${darken(m.hairColor, 10)}"/><path d="M${headCX + 10},${browY + 1} Q${headCX + 18},${browY - 6} ${headCX + 26},${browY + 1}" fill="${darken(m.hairColor, 10)}"/>`,
-            thin: `<line x1="${headCX - 25}" y1="${browY}" x2="${headCX - 11}" y2="${browY - 1}" stroke="${darken(m.hairColor, 10)}" stroke-width="1" stroke-linecap="round"/><line x1="${headCX + 11}" y1="${browY - 1}" x2="${headCX + 25}" y2="${browY}" stroke="${darken(m.hairColor, 10)}" stroke-width="1" stroke-linecap="round"/>`,
-            arched: `<path d="M${headCX - 26},${browY + 2} Q${headCX - 18},${browY - 8} ${headCX - 10},${browY + 2}" fill="none" stroke="${darken(m.hairColor, 10)}" stroke-width="1.8" stroke-linecap="round"/><path d="M${headCX + 10},${browY + 2} Q${headCX + 18},${browY - 8} ${headCX + 26},${browY + 2}" fill="none" stroke="${darken(m.hairColor, 10)}" stroke-width="1.8" stroke-linecap="round"/>`,
-            flat: `<line x1="${headCX - 26}" y1="${browY}" x2="${headCX - 10}" y2="${browY}" stroke="${darken(m.hairColor, 10)}" stroke-width="2.5" stroke-linecap="butt"/><line x1="${headCX + 10}" y1="${browY}" x2="${headCX + 26}" y2="${browY}" stroke="${darken(m.hairColor, 10)}" stroke-width="2.5" stroke-linecap="butt"/>`,
-            angry: `<path d="M${headCX - 26},${browY + 4} L${headCX - 10},${browY - 2}" stroke="${darken(m.hairColor, 10)}" stroke-width="2" stroke-linecap="round"/><path d="M${headCX + 10},${browY - 2} L${headCX + 26},${browY + 4}" stroke="${darken(m.hairColor, 10)}" stroke-width="2" stroke-linecap="round"/>`
+        // === EYES (Mii-style: white oval + dark oval iris + specular dot) ===
+        const eyeGap = headRX * 0.34;
+        const eyeY2 = headCY + headRY * 0.08;
+        const eyeDefs = {
+            normal: (ex, ey) => {
+                const ew = 7, eh = 8;
+                return `<ellipse cx="${ex}" cy="${ey}" rx="${ew}" ry="${eh}" fill="white" stroke="#2d2d2d" stroke-width="0.8"/>` +
+                    `<ellipse cx="${ex + 0.5}" cy="${ey + 1}" rx="${ew * 0.55}" ry="${eh * 0.6}" fill="${m.eyeColor}"/>` +
+                    `<ellipse cx="${ex + 0.5}" cy="${ey + 1}" rx="${ew * 0.35}" ry="${eh * 0.38}" fill="black"/>` +
+                    `<circle cx="${ex + 2}" cy="${ey - 2}" r="2.2" fill="white" opacity="0.9"/>`;
+            },
+            big: (ex, ey) => {
+                const ew = 9, eh = 10.5;
+                return `<ellipse cx="${ex}" cy="${ey}" rx="${ew}" ry="${eh}" fill="white" stroke="#2d2d2d" stroke-width="0.8"/>` +
+                    `<ellipse cx="${ex + 0.5}" cy="${ey + 1}" rx="${ew * 0.55}" ry="${eh * 0.58}" fill="${m.eyeColor}"/>` +
+                    `<ellipse cx="${ex + 0.5}" cy="${ey + 1}" rx="${ew * 0.33}" ry="${eh * 0.36}" fill="black"/>` +
+                    `<circle cx="${ex + 2.5}" cy="${ey - 2.5}" r="3" fill="white" opacity="0.9"/>`;
+            },
+            small: (ex, ey) => {
+                const ew = 5, eh = 5.5;
+                return `<ellipse cx="${ex}" cy="${ey}" rx="${ew}" ry="${eh}" fill="white" stroke="#2d2d2d" stroke-width="0.8"/>` +
+                    `<ellipse cx="${ex + 0.3}" cy="${ey + 0.5}" rx="${ew * 0.55}" ry="${eh * 0.6}" fill="${m.eyeColor}"/>` +
+                    `<ellipse cx="${ex + 0.3}" cy="${ey + 0.5}" rx="${ew * 0.32}" ry="${eh * 0.36}" fill="black"/>` +
+                    `<circle cx="${ex + 1.5}" cy="${ey - 1}" r="1.5" fill="white" opacity="0.9"/>`;
+            },
+            narrow: (ex, ey) => {
+                const ew = 8, eh = 4.5;
+                return `<ellipse cx="${ex}" cy="${ey}" rx="${ew}" ry="${eh}" fill="white" stroke="#2d2d2d" stroke-width="0.8"/>` +
+                    `<ellipse cx="${ex + 0.5}" cy="${ey}" rx="${ew * 0.45}" ry="${eh * 0.7}" fill="${m.eyeColor}"/>` +
+                    `<ellipse cx="${ex + 0.5}" cy="${ey}" rx="${ew * 0.28}" ry="${eh * 0.5}" fill="black"/>` +
+                    `<circle cx="${ex + 2}" cy="${ey - 1}" r="1.5" fill="white" opacity="0.9"/>`;
+            },
+            wide: (ex, ey) => {
+                const ew = 10, eh = 11;
+                return `<ellipse cx="${ex}" cy="${ey}" rx="${ew}" ry="${eh}" fill="white" stroke="#2d2d2d" stroke-width="0.8"/>` +
+                    `<ellipse cx="${ex + 0.5}" cy="${ey + 1}" rx="${ew * 0.52}" ry="${eh * 0.56}" fill="${m.eyeColor}"/>` +
+                    `<ellipse cx="${ex + 0.5}" cy="${ey + 1}" rx="${ew * 0.32}" ry="${eh * 0.35}" fill="black"/>` +
+                    `<circle cx="${ex + 2.5}" cy="${ey - 3}" r="3.2" fill="white" opacity="0.9"/>`;
+            },
+            sleepy: (ex, ey) => {
+                const ew = 7, eh = 6;
+                return `<ellipse cx="${ex}" cy="${ey + 1}" rx="${ew}" ry="${eh}" fill="white" stroke="#2d2d2d" stroke-width="0.8"/>` +
+                    `<ellipse cx="${ex}" cy="${ey + 2}" rx="${ew * 0.5}" ry="${eh * 0.5}" fill="${m.eyeColor}"/>` +
+                    `<ellipse cx="${ex}" cy="${ey + 2}" rx="${ew * 0.3}" ry="${eh * 0.32}" fill="black"/>` +
+                    `<path d="M${ex - ew - 1},${ey - 4} Q${ex},${ey - 6} ${ex + ew + 1},${ey - 3}" fill="none" stroke="#2d2d2d" stroke-width="1.5" stroke-linecap="round"/>` +
+                    `<circle cx="${ex + 1.5}" cy="${ey - 1}" r="1.8" fill="white" opacity="0.9"/>`;
+            },
+            bright: (ex, ey) => {
+                const ew = 8, eh = 9;
+                return `<ellipse cx="${ex}" cy="${ey}" rx="${ew}" ry="${eh}" fill="white" stroke="#2d2d2d" stroke-width="0.8"/>` +
+                    `<ellipse cx="${ex}" cy="${ey + 0.5}" rx="${ew * 0.55}" ry="${eh * 0.55}" fill="${m.eyeColor}"/>` +
+                    `<ellipse cx="${ex}" cy="${ey + 0.5}" rx="${ew * 0.33}" ry="${eh * 0.35}" fill="black"/>` +
+                    `<circle cx="${ex + 2}" cy="${ey - 2.5}" r="2.8" fill="white" opacity="0.95"/>` +
+                    `<circle cx="${ex - 1.5}" cy="${ey + 2}" r="1.2" fill="white" opacity="0.5"/>`;
+            }
         };
-        svg += brows[m.brows] || brows.normal;
+        const drawEye2 = eyeDefs[m.eyeShape] || eyeDefs.normal;
+        svg += drawEye2(hcx - eyeGap, eyeY2);
+        svg += drawEye2(hcx + eyeGap, eyeY2);
 
-        // Nose
-        const noseY = eyeY + 14;
-        const noses = {
-            small: `<ellipse cx="${headCX}" cy="${noseY}" rx="3" ry="2.5" fill="${darken(skin, 12)}" opacity="0.6"/>`,
-            medium: `<path d="M${headCX - 4},${noseY - 3} L${headCX},${noseY + 4} L${headCX + 4},${noseY - 3}" fill="none" stroke="${darken(skin, 15)}" stroke-width="1.2" stroke-linecap="round"/>`,
-            large: `<ellipse cx="${headCX}" cy="${noseY}" rx="6" ry="5" fill="${darken(skin, 10)}" opacity="0.5"/>`,
-            pointed: `<path d="M${headCX},${noseY - 5} L${headCX - 3},${noseY + 3} L${headCX + 3},${noseY + 3} Z" fill="${darken(skin, 10)}" opacity="0.5"/>`,
-            round: `<circle cx="${headCX}" cy="${noseY}" r="4" fill="${darken(skin, 10)}" opacity="0.5"/>`,
-            flat: `<line x1="${headCX - 4}" y1="${noseY}" x2="${headCX + 4}" y2="${noseY}" stroke="${darken(skin, 15)}" stroke-width="1.5" stroke-linecap="round"/>`
+        // === NOSE (Mii-style: small simple shape) ===
+        const noseY2 = eyeY2 + headRY * 0.24;
+        const noseDefs = {
+            small: `<ellipse cx="${hcx}" cy="${noseY2}" rx="3" ry="2.5" fill="${darken(skin, 15)}" opacity="0.55"/>`,
+            medium: `<path d="M${hcx - 3.5},${noseY2 - 2} L${hcx},${noseY2 + 4} L${hcx + 3.5},${noseY2 - 2}" fill="none" stroke="${darken(skin, 18)}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>`,
+            large: `<ellipse cx="${hcx}" cy="${noseY2}" rx="5.5" ry="4.5" fill="${darken(skin, 12)}" opacity="0.45"/>`,
+            pointed: `<path d="M${hcx},${noseY2 - 5} L${hcx - 3},${noseY2 + 3} L${hcx + 3},${noseY2 + 3} Z" fill="${darken(skin, 12)}" opacity="0.5"/>`,
+            round: `<circle cx="${hcx}" cy="${noseY2}" r="4" fill="${darken(skin, 12)}" opacity="0.45"/>`,
+            flat: `<line x1="${hcx - 3.5}" y1="${noseY2}" x2="${hcx + 3.5}" y2="${noseY2}" stroke="${darken(skin, 18)}" stroke-width="1.5" stroke-linecap="round"/>`
         };
-        svg += noses[m.nose] || noses.small;
+        svg += noseDefs[m.nose] || noseDefs.small;
 
-        // Mouth
-        const mouthY = noseY + 14;
-        const mouths = {
-            smile: `<path d="M${headCX - 10},${mouthY - 2} Q${headCX},${mouthY + 8} ${headCX + 10},${mouthY - 2}" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round"/>`,
-            neutral: `<line x1="${headCX - 8}" y1="${mouthY}" x2="${headCX + 8}" y2="${mouthY}" stroke="#e74c3c" stroke-width="2" stroke-linecap="round"/>`,
-            open: `<ellipse cx="${headCX}" cy="${mouthY + 2}" rx="8" ry="5" fill="#c0392b"/><ellipse cx="${headCX}" cy="${mouthY + 1}" rx="6" ry="3" fill="#e74c3c"/>`,
-            smirk: `<path d="M${headCX - 8},${mouthY} Q${headCX + 2},${mouthY + 6} ${headCX + 10},${mouthY - 2}" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round"/>`,
-            grin: `<path d="M${headCX - 11},${mouthY - 1} Q${headCX},${mouthY + 10} ${headCX + 11},${mouthY - 1}" fill="#fff" stroke="#e74c3c" stroke-width="1.5"/><line x1="${headCX - 9}" y1="${mouthY}" x2="${headCX + 9}" y2="${mouthY}" stroke="#e74c3c" stroke-width="1"/>`,
-            pout: `<path d="M${headCX - 8},${mouthY + 4} Q${headCX},${mouthY - 2} ${headCX + 8},${mouthY + 4}" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round"/>`
+        // === MOUTH (Mii-style: simple curves) ===
+        const mouthY2 = noseY2 + headRY * 0.28;
+        const mw = headRX * 0.25;
+        const mouthDefs = {
+            smile: `<path d="M${hcx - mw},${mouthY2 - 1} Q${hcx},${mouthY2 + mw * 0.8} ${hcx + mw},${mouthY2 - 1}" fill="none" stroke="#d44" stroke-width="2" stroke-linecap="round"/>`,
+            neutral: `<line x1="${hcx - mw}" y1="${mouthY2 + 1}" x2="${hcx + mw}" y2="${mouthY2 + 1}" stroke="#d44" stroke-width="2" stroke-linecap="round"/>`,
+            open: `<ellipse cx="${hcx}" cy="${mouthY2 + 2}" rx="${mw * 0.9}" ry="${mw * 0.55}" fill="#c33"/><ellipse cx="${hcx}" cy="${mouthY2 + 1}" rx="${mw * 0.7}" ry="${mw * 0.35}" fill="#e55"/>`,
+            smirk: `<path d="M${hcx - mw},${mouthY2 + 1} Q${hcx + 2},${mouthY2 + mw * 0.7} ${hcx + mw},${mouthY2 - 2}" fill="none" stroke="#d44" stroke-width="2" stroke-linecap="round"/>`,
+            grin: `<path d="M${hcx - mw - 2},${mouthY2} Q${hcx},${mouthY2 + mw} ${hcx + mw + 2},${mouthY2}" fill="white" stroke="#d44" stroke-width="1.5"/><line x1="${hcx - mw}" y1="${mouthY2 + 0.5}" x2="${hcx + mw}" y2="${mouthY2 + 0.5}" stroke="#d44" stroke-width="0.8"/>`,
+            pout: `<path d="M${hcx - mw},${mouthY2 + 4} Q${hcx},${mouthY2 - 2} ${hcx + mw},${mouthY2 + 4}" fill="none" stroke="#d44" stroke-width="2" stroke-linecap="round"/>`
         };
-        svg += mouths[m.mouth] || mouths.smile;
+        svg += mouthDefs[m.mouth] || mouthDefs.smile;
 
-        // Glasses
+        // === GLASSES (Mii-style thick frames) ===
         if (m.glasses !== 'none') {
-            const glasses = {
-                round: `<circle cx="${headCX - 18}" cy="${eyeY}" r="10" fill="none" stroke="#334155" stroke-width="1.5"/><circle cx="${headCX + 18}" cy="${eyeY}" r="10" fill="none" stroke="#334155" stroke-width="1.5"/><line x1="${headCX - 8}" y1="${eyeY}" x2="${headCX + 8}" y2="${eyeY}" stroke="#334155" stroke-width="1.5"/>`,
-                square: `<rect x="${headCX - 27}" y="${eyeY - 8}" width="16" height="14" rx="2" fill="none" stroke="#334155" stroke-width="1.5"/><rect x="${headCX + 11}" y="${eyeY - 8}" width="16" height="14" rx="2" fill="none" stroke="#334155" stroke-width="1.5"/><line x1="${headCX - 11}" y1="${eyeY}" x2="${headCX + 11}" y2="${eyeY}" stroke="#334155" stroke-width="1.5"/>`,
-                aviator: `<path d="M${headCX - 28},${eyeY - 6} Q${headCX - 18},${eyeY - 12} ${headCX - 8},${eyeY - 6} Q${headCX - 18},${eyeY + 10} ${headCX - 28},${eyeY - 6}" fill="none" stroke="#78350f" stroke-width="1.5"/><path d="M${headCX + 8},${eyeY - 6} Q${headCX + 18},${eyeY - 12} ${headCX + 28},${eyeY - 6} Q${headCX + 18},${eyeY + 10} ${headCX + 8},${eyeY - 6}" fill="none" stroke="#78350f" stroke-width="1.5"/><line x1="${headCX - 8}" y1="${eyeY}" x2="${headCX + 8}" y2="${eyeY}" stroke="#78350f" stroke-width="1.5"/>`,
-                'cat-eye': `<path d="M${headCX - 28},${eyeY + 2} L${headCX - 25},${eyeY - 9} L${headCX - 9},${eyeY - 7} L${headCX - 8},${eyeY + 5} Z" fill="none" stroke="#334155" stroke-width="1.5"/><path d="M${headCX + 8},${eyeY + 5} L${headCX + 9},${eyeY - 7} L${headCX + 25},${eyeY - 9} L${headCX + 28},${eyeY + 2} Z" fill="none" stroke="#334155" stroke-width="1.5"/><line x1="${headCX - 8}" y1="${eyeY}" x2="${headCX + 8}" y2="${eyeY}" stroke="#334155" stroke-width="1.5"/>`,
-                'half-rim': `<line x1="${headCX - 27}" y1="${eyeY}" x2="${headCX - 9}" y2="${eyeY}" stroke="#334155" stroke-width="1.8"/><path d="M${headCX - 27},${eyeY} Q${headCX - 18},${eyeY + 10} ${headCX - 9},${eyeY}" fill="none" stroke="#334155" stroke-width="1.2"/><line x1="${headCX + 9}" y1="${eyeY}" x2="${headCX + 27}" y2="${eyeY}" stroke="#334155" stroke-width="1.8"/><path d="M${headCX + 9},${eyeY} Q${headCX + 18},${eyeY + 10} ${headCX + 27},${eyeY}" fill="none" stroke="#334155" stroke-width="1.2"/><line x1="${headCX - 9}" y1="${eyeY}" x2="${headCX + 9}" y2="${eyeY}" stroke="#334155" stroke-width="1.5"/>`
+            const gx = eyeGap;
+            const gy = eyeY2;
+            const ghw = headRX * 0.3;
+            const ghh = headRY * 0.26;
+            const gdefs = {
+                round: `<circle cx="${hcx - gx}" cy="${gy}" r="${ghw}" fill="none" stroke="#2d2d2d" stroke-width="2.2"/><circle cx="${hcx + gx}" cy="${gy}" r="${ghw}" fill="none" stroke="#2d2d2d" stroke-width="2.2"/><line x1="${hcx - gx + ghw}" y1="${gy}" x2="${hcx + gx - ghw}" y2="${gy}" stroke="#2d2d2d" stroke-width="2"/>`,
+                square: `<rect x="${hcx - gx - ghw}" y="${gy - ghh}" width="${ghw * 2}" height="${ghh * 2}" rx="3" fill="none" stroke="#2d2d2d" stroke-width="2.2"/><rect x="${hcx + gx - ghw}" y="${gy - ghh}" width="${ghw * 2}" height="${ghh * 2}" rx="3" fill="none" stroke="#2d2d2d" stroke-width="2.2"/><line x1="${hcx - gx + ghw}" y1="${gy}" x2="${hcx + gx - ghw}" y2="${gy}" stroke="#2d2d2d" stroke-width="2"/>`,
+                aviator: `<path d="M${hcx - gx - ghw - 2},${gy - 2} Q${hcx - gx},${gy - ghh - 4} ${hcx - gx + ghw + 2},${gy - 2} Q${hcx - gx},${gy + ghh + 4} ${hcx - gx - ghw - 2},${gy - 2}" fill="none" stroke="#5c3a1a" stroke-width="2"/><path d="M${hcx + gx - ghw - 2},${gy - 2} Q${hcx + gx},${gy - ghh - 4} ${hcx + gx + ghw + 2},${gy - 2} Q${hcx + gx},${gy + ghh + 4} ${hcx + gx - ghw - 2},${gy - 2}" fill="none" stroke="#5c3a1a" stroke-width="2"/><line x1="${hcx - gx + ghw}" y1="${gy}" x2="${hcx + gx - ghw}" y2="${gy}" stroke="#5c3a1a" stroke-width="2"/>`,
+                'cat-eye': `<path d="M${hcx - gx - ghw - 3},${gy + 2} L${hcx - gx - ghw + 2},${gy - ghh - 2} L${hcx - gx + ghw + 2},${gy - ghh} L${hcx - gx + ghw + 1},${gy + ghh}" fill="none" stroke="#2d2d2d" stroke-width="2.2"/><path d="M${hcx + gx + ghw + 3},${gy + 2} L${hcx + gx + ghw - 2},${gy - ghh - 2} L${hcx + gx - ghw - 2},${gy - ghh} L${hcx + gx - ghw - 1},${gy + ghh}" fill="none" stroke="#2d2d2d" stroke-width="2.2"/><line x1="${hcx - gx + ghw + 1}" y1="${gy}" x2="${hcx + gx - ghw - 1}" y2="${gy}" stroke="#2d2d2d" stroke-width="2"/>`,
+                'half-rim': `<line x1="${hcx - gx - ghw}" y1="${gy}" x2="${hcx - gx + ghw}" y2="${gy}" stroke="#2d2d2d" stroke-width="2.5"/><path d="M${hcx - gx - ghw},${gy} Q${hcx - gx},${gy + ghh + 2} ${hcx - gx + ghw},${gy}" fill="none" stroke="#2d2d2d" stroke-width="1.5"/><line x1="${hcx + gx - ghw}" y1="${gy}" x2="${hcx + gx + ghw}" y2="${gy}" stroke="#2d2d2d" stroke-width="2.5"/><path d="M${hcx + gx - ghw},${gy} Q${hcx + gx},${gy + ghh + 2} ${hcx + gx + ghw},${gy}" fill="none" stroke="#2d2d2d" stroke-width="1.5"/><line x1="${hcx - gx + ghw}" y1="${gy}" x2="${hcx + gx - ghw}" y2="${gy}" stroke="#2d2d2d" stroke-width="2"/>`
             };
-            svg += glasses[m.glasses] || glasses.round;
+            svg += gdefs[m.glasses] || gdefs.round;
         }
 
-        // Hat
+        // === HAT (3D shaded Mii-style) ===
         if (m.hat !== 'none') {
-            const hats = {
-                cap: `<ellipse cx="${headCX}" cy="${headCY - 50}" rx="42" ry="12" fill="#2563eb"/><path d="M${headCX - 42},${headCY - 50} Q${headCX - 42},${headCY - 70} ${headCX},${headCY - 72} Q${headCX + 42},${headCY - 70} ${headCX + 42},${headCY - 50}" fill="#2563eb"/><rect x="${headCX + 20}" y="${headCY - 58}" width="30" height="8" rx="3" fill="#1d4ed8"/>`,
-                beanie: `<path d="M${headCX - 42},${headCY - 38} Q${headCX - 45},${headCY - 65} ${headCX},${headCY - 72} Q${headCX + 45},${headCY - 65} ${headCX + 42},${headCY - 38}" fill="#dc2626"/><ellipse cx="${headCX}" cy="${headCY - 38}" rx="44" ry="8" fill="#b91c1c"/><circle cx="${headCX}" cy="${headCY - 72}" r="6" fill="#f3f4f6"/>`,
-                tophat: `<rect x="${headCX - 30}" y="${headCY - 90}" width="60" height="40" rx="5" fill="#1e293b"/><ellipse cx="${headCX}" cy="${headCY - 50}" rx="42" ry="6" fill="#1e293b"/><rect x="${headCX - 28}" y="${headCY - 55}" width="56" height="6" fill="#7c3aed"/>`,
-                headband: `<rect x="${headCX - 44}" y="${headCY - 40}" width="88" height="6" rx="3" fill="#ef4444"/>`,
-                bow: `<path d="M${headCX},${headCY - 50} Q${headCX - 15},${headCY - 65} ${headCX - 25},${headCY - 50} Q${headCX - 15},${headCY - 40} ${headCX},${headCY - 50}" fill="#ec4899"/><path d="M${headCX},${headCY - 50} Q${headCX + 15},${headCY - 65} ${headCX + 25},${headCY - 50} Q${headCX + 15},${headCY - 40} ${headCX},${headCY - 50}" fill="#ec4899"/><circle cx="${headCX}" cy="${headCY - 50}" r="3" fill="#be185d"/>`
+            const hatDefs = {
+                cap: `<path d="M${hcx - hairW - 5},${hairTop + 6} Q${hcx - hairW - 5},${hairTop - 16} ${hcx},${hairTop - 18} Q${hcx + hairW + 5},${hairTop - 16} ${hcx + hairW + 5},${hairTop + 6}" fill="#2563eb" stroke="#1d4ed8" stroke-width="0.8"/><ellipse cx="${hcx}" cy="${hairTop + 6}" rx="${hairW + 6}" ry="5" fill="#2563eb"/><rect x="${hcx + hairW - 6}" y="${hairTop - 2}" width="22" height="6" rx="3" fill="#1d4ed8"/>`,
+                beanie: `<path d="M${hcx - hairW - 4},${hairTop + 8} Q${hcx - hairW - 6},${hairTop - 14} ${hcx},${hairTop - 18} Q${hcx + hairW + 6},${hairTop - 14} ${hcx + hairW + 4},${hairTop + 8}" fill="#dc2626" stroke="#b91c1c" stroke-width="0.8"/><ellipse cx="${hcx}" cy="${hairTop + 8}" rx="${hairW + 5}" ry="5" fill="#b91c1c"/><circle cx="${hcx}" cy="${hairTop - 18}" r="5" fill="#f5f5f5"/>`,
+                tophat: `<rect x="${hcx - 24}" y="${hairTop - 42}" width="48" height="34" rx="4" fill="#1e293b" stroke="#0f172a" stroke-width="0.8"/><ellipse cx="${hcx}" cy="${hairTop - 8}" rx="${hairW + 8}" ry="5" fill="#1e293b"/><rect x="${hcx - 22}" y="${hairTop - 14}" width="44" height="6" rx="2" fill="#7c3aed"/>`,
+                headband: `<rect x="${hcx - hairW - 5}" y="${hairTop + 4}" width="${(hairW + 5) * 2}" height="5" rx="2.5" fill="#ef4444" stroke="#dc2626" stroke-width="0.5"/>`,
+                bow: `<path d="M${hcx},${hairTop + 2} Q${hcx - 12},${hairTop - 12} ${hcx - 20},${hairTop + 2} Q${hcx - 12},${hairTop + 10} ${hcx},${hairTop + 2}" fill="#ec4899" stroke="#be185d" stroke-width="0.5"/><path d="M${hcx},${hairTop + 2} Q${hcx + 12},${hairTop - 12} ${hcx + 20},${hairTop + 2} Q${hcx + 12},${hairTop + 10} ${hcx},${hairTop + 2}" fill="#ec4899" stroke="#be185d" stroke-width="0.5"/><circle cx="${hcx}" cy="${hairTop + 2}" r="2.5" fill="#be185d"/>`
             };
-            svg += hats[m.hat] || '';
+            svg += hatDefs[m.hat] || '';
         }
 
-        // Accessory
+        // === ACCESSORIES ===
         if (m.accessory === 'earring') {
-            svg += `<circle cx="${headCX - 52}" cy="${headCY + 15}" r="3" fill="#f59e0b" stroke="#d97706" stroke-width="0.5"/>`;
-            svg += `<circle cx="${headCX + 52}" cy="${headCY + 15}" r="3" fill="#f59e0b" stroke="#d97706" stroke-width="0.5"/>`;
+            svg += `<circle cx="${hcx - headRX - 3}" cy="${headCY + headRY * 0.35}" r="2.5" fill="#f5c542" stroke="#d4a017" stroke-width="0.5"/>`;
+            svg += `<circle cx="${hcx + headRX + 3}" cy="${headCY + headRY * 0.35}" r="2.5" fill="#f5c542" stroke="#d4a017" stroke-width="0.5"/>`;
         } else if (m.accessory === 'necklace') {
-            svg += `<path d="M${headCX - 15},${by + 5} Q${headCX},${by + 18} ${headCX + 15},${by + 5}" fill="none" stroke="#f59e0b" stroke-width="1.5"/>`;
-            svg += `<circle cx="${headCX}" cy="${by + 15}" r="3" fill="#f59e0b" stroke="#d97706" stroke-width="0.5"/>`;
+            svg += `<path d="M${hcx - 14},${bodyY + 3} Q${hcx},${bodyY + 14} ${hcx + 14},${bodyY + 3}" fill="none" stroke="#f5c542" stroke-width="1.5"/>`;
+            svg += `<circle cx="${hcx}" cy="${bodyY + 12}" r="2.5" fill="#f5c542" stroke="#d4a017" stroke-width="0.5"/>`;
         } else if (m.accessory === 'bowtie') {
-            svg += `<path d="M${headCX},${by + 3} L${headCX - 10},${by - 3} L${headCX - 10},${by + 9} Z" fill="#ef4444"/><path d="M${headCX},${by + 3} L${headCX + 10},${by - 3} L${headCX + 10},${by + 9} Z" fill="#ef4444"/><circle cx="${headCX}" cy="${headCY + 50}" r="2.5" fill="#dc2626"/>`;
+            svg += `<path d="M${hcx},${bodyY + 1} L${hcx - 8},${bodyY - 4} L${hcx - 8},${bodyY + 6} Z" fill="#ef4444" stroke="#dc2626" stroke-width="0.5"/>`;
+            svg += `<path d="M${hcx},${bodyY + 1} L${hcx + 8},${bodyY - 4} L${hcx + 8},${bodyY + 6} Z" fill="#ef4444" stroke="#dc2626" stroke-width="0.5"/>`;
+            svg += `<circle cx="${hcx}" cy="${bodyY + 1}" r="2" fill="#dc2626"/>`;
         } else if (m.accessory === 'scarf') {
-            svg += `<path d="M${headCX - 20},${by + 2} Q${headCX},${by + 12} ${headCX + 20},${by + 2}" fill="#3b82f6" stroke="#2563eb" stroke-width="0.5"/><rect x="${headCX - 4}" y="${by + 5}" width="8" height="18" rx="3" fill="#3b82f6"/>`;
+            svg += `<path d="M${hcx - 18},${bodyY + 1} Q${hcx},${bodyY + 10} ${hcx + 18},${bodyY + 1}" fill="#3b82f6" stroke="#2563eb" stroke-width="0.8"/>`;
+            svg += `<rect x="${hcx - 3}" y="${bodyY + 5}" width="6" height="14" rx="2.5" fill="#3b82f6"/>`;
         }
 
         svg += '</svg>';
