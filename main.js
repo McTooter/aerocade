@@ -1945,7 +1945,6 @@ function initProfile() {
         const accounts = await getAccounts();
         const session = getSession();
         const names = Object.keys(accounts);
-        if (!names.length) { el.innerHTML = ''; return; }
         let html = '';
         names.forEach(name => {
             const a = accounts[name];
@@ -1959,6 +1958,10 @@ function initProfile() {
                 <button class="profile-saved-card-del" data-del="${name}">&times;</button>
             </div>`;
         });
+        html += `<div class="profile-add-card" id="profileAddNew">
+            <div class="profile-add-icon">+</div>
+            <div class="profile-add-label">New</div>
+        </div>`;
         el.innerHTML = html;
 
         el.querySelectorAll('.profile-saved-card').forEach(card => {
@@ -1996,6 +1999,22 @@ function initProfile() {
                 showToast(`Account "${name}" deleted.`, 'info');
             });
         });
+
+        const addBtn = document.getElementById('profileAddNew');
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
+                clearSession();
+                document.getElementById('profileNameInput').value = '';
+                editorState = { faceType:0,skinColor:0,faceMakeup:0,faceWrinkles:0,gender:0,hairStyle:1,hairColor:0,hairFlip:0,eyeStyle:0,eyeColor:0,eyeSize:4,eyeStretch:3,eyeRotation:4,eyePosX:6,eyePosY:10,browStyle:0,browSize:4,browStretch:3,browRotation:6,browPosX:6,browPosY:10,noseStyle:0,noseSize:4,nosePosY:13,mouthStyle:0,mouthSize:4,mouthStretch:3,mouthPosY:13,glassesStyle:0,glassesSize:4,glassesPosY:10,facialHair:0,moleEnable:0,moleSize:1,molePosX:15,molePosY:20,favColor:4,height:64,weight:64 };
+                currentStudioData = buildStudioData();
+                renderStage();
+                renderPanels();
+                renderSavedAccounts('profileSavedGridBottom');
+                updateSidebarUser();
+                updateAdminUI();
+                showToast('New Mii — edit and save!', 'info');
+            });
+        }
     }
 
     function loadAccountIntoEditor(name, data) {
@@ -2039,7 +2058,7 @@ function initProfile() {
 
     // === Sidebar Account Button ===
     document.getElementById('btnAccount')?.addEventListener('click', () => {
-        switchView('viewMiiMaker');
+        showView('miimaker');
     });
 
     // === Admin Game Edit ===

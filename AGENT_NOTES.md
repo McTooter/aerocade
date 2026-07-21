@@ -25,6 +25,7 @@ A multi-console retro emulator web app (NES, SNES, N64, Game Boy, Sega Genesis, 
 | `avatar-creator/` | Standalone React+TS+Tailwind+Framer Motion avatar creator (AeroAvatar) |
 
 ## Account System (jsonbin.io)
+- **Combined with Mii Maker** — accounts are a horizontal scrollable strip at the top of the Mii Maker view
 - **No Firebase, no auth forms, no login/register UI** — profile goes straight to editor
 - Admin name: `Zant` (constant `ADMIN_NAME`)
 - Admin role is ALWAYS forced — check `name === ADMIN_NAME` as fallback everywhere
@@ -39,6 +40,8 @@ A multi-console retro emulator web app (NES, SNES, N64, Game Boy, Sega Genesis, 
 - Session stored in localStorage key `aerocade_session`
 - Accounts stored in localStorage key `aerocade_accounts`
 - User may need to clear stuck data: `localStorage.removeItem('aerocade_accounts'); location.reload();`
+- The "+" button at the end of the account strip creates a new Mii (clears editor)
+- Clicking an account card loads that Mii into the editor
 
 ## Mii Studio API
 - URL: `https://studio.mii.nintendo.com/miis/image.png?data=<94charhex>&width={96|128|270|512}&type=face`
@@ -70,9 +73,9 @@ A multi-console retro emulator web app (NES, SNES, N64, Game Boy, Sega Genesis, 
 1. ~~coi-serviceworker.js catch handler returned undefined~~ (FIXED — now returns Response 503)
 2. ~~Mii Studio images broken due to CORS~~ (FIXED — switched to require-corp + CORP headers)
 3. ~~Zant shows as 'Member' on new browser~~ (FIXED — admin role forced via ADMIN_NAME fallback)
-4. N64 custom core (`n64.js`) is dead code — all N64 routes to EmulatorJS iframe
-5. PSP GPU is a stub — renders nothing
-6. User needs to clear localStorage to remove old stuck admin data
+4. ~~switchView bug~~ (FIXED — was calling nonexistent function, now calls showView)
+5. N64 custom core (`n64.js`) is dead code — all N64 routes to EmulatorJS iframe
+6. PSP GPU is a stub — renders nothing
 
 ## Design Decisions
 - Frutiger Aero = MAXIMUM effects — glassmorphism, bubbles, aurora, water shimmer, fish, parallax
@@ -80,6 +83,8 @@ A multi-console retro emulator web app (NES, SNES, N64, Game Boy, Sega Genesis, 
 - Mobile responsive with media queries (profile stacks vertically, cursor hidden on touch)
 - No login/register forms — admin auto-syncs from jsonbin on startup
 - `coi-serviceworker.js` is loaded as readable (not minified) for easier debugging
+- **Mii Maker + Account System are combined** — horizontal account strip at top, editor below
+- Account strip has a "+" button to create new Miis, each card shows Mii + name + role
 
 ## Deploy Checklist
 1. Make changes to files in working directory

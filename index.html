@@ -400,6 +400,11 @@
         <!-- Profile & Mii Maker View -->
         <div class="view" id="viewMiiMaker">
             <div class="profile-wrap">
+                <!-- Account strip (horizontal scrollable) -->
+                <div class="profile-accounts-strip" id="profileAccountsStrip">
+                    <div class="profile-accounts-scroll" id="profileSavedGridBottom"></div>
+                </div>
+
                 <!-- Editor (always visible) -->
                 <div class="profile-editor" id="profileEditor">
                     <div class="profile-editor-left">
@@ -428,12 +433,6 @@
                         </div>
                         <div class="profile-panels" id="profilePanels"></div>
                     </div>
-                </div>
-
-                <!-- Saved accounts grid (always visible) -->
-                <div class="profile-saved-bottom" id="profileSavedBottom">
-                    <div class="profile-saved-title">Accounts</div>
-                    <div class="profile-saved-grid" id="profileSavedGridBottom"></div>
                 </div>
             </div>
         </div>
