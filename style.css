@@ -571,6 +571,115 @@ body {
 
 .hero p { color: var(--text-secondary); font-size: 16px; }
 
+/* ==================== 3D FLOATING CARD ==================== */
+.scene3d {
+    perspective: 800px;
+    display: flex; justify-content: center;
+    padding: 10px 32px 20px;
+    position: relative; z-index: 1;
+    animation: fadeInUp 0.6s 0.1s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+.card3d {
+    width: 320px; height: 200px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.1s ease-out;
+    cursor: pointer;
+}
+
+.card3d-face {
+    position: absolute; inset: 0;
+    border-radius: 20px;
+    backface-visibility: hidden;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 24px;
+}
+
+.card3d-front {
+    background: linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(200,220,255,0.5) 50%, rgba(180,200,255,0.3) 100%);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    box-shadow:
+        0 8px 32px rgba(0,0,0,0.08),
+        0 2px 8px rgba(0,0,0,0.04),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+    overflow: hidden;
+}
+
+.card3d-front::before {
+    content: '';
+    position: absolute; top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4), transparent 60%);
+    pointer-events: none;
+}
+
+.card3d-back {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
+    transform: rotateY(180deg);
+    color: white;
+    box-shadow: 0 8px 32px rgba(99,102,241,0.3);
+}
+
+.card3d-logo {
+    font-family: var(--font-display);
+    font-size: 48px; font-weight: 900;
+    background: linear-gradient(135deg, #6366f1, #06b6d4);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative; z-index: 1;
+}
+
+.card3d-title {
+    font-family: var(--font-display);
+    font-size: 14px; font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 2px; text-transform: uppercase;
+    position: relative; z-index: 1;
+}
+
+.card3d-sub {
+    font-size: 11px; color: var(--text-secondary);
+    margin-top: 4px; opacity: 0.7;
+    position: relative; z-index: 1;
+}
+
+.card3d-consoles {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    justify-content: center; margin-top: 12px;
+    position: relative; z-index: 1;
+}
+
+.card3d-consoles span {
+    font-size: 10px; font-weight: 600;
+    padding: 3px 8px; border-radius: 10px;
+    background: rgba(99,102,241,0.1);
+    color: #6366f1;
+}
+
+.card3d-back-title {
+    font-family: var(--font-display);
+    font-size: 28px; font-weight: 900;
+    position: relative; z-index: 1;
+}
+
+.card3d-back-sub {
+    font-size: 12px; opacity: 0.8;
+    margin-top: 4px; position: relative; z-index: 1;
+}
+
+.card3d-back-icon {
+    font-size: 40px; margin-top: 10px;
+    position: relative; z-index: 1;
+}
+
+@keyframes card3dFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+}
+
 /* ==================== 3D CAROUSEL ==================== */
 .carousel-wrap {
     perspective: 1000px;

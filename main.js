@@ -210,7 +210,6 @@
         let curX = -100, curY = -100;
         let visible = false;
 
-        // Create a tiny transparent cursor via CSS
         const style = document.createElement('style');
         style.textContent = `*, *::before, *::after { cursor: none !important; }`;
         document.head.appendChild(style);
@@ -230,15 +229,17 @@
         });
 
         function tick() {
-            curX += (mx - curX) * 0.3;
-            curY += (my - curY) * 0.3;
-            cursor.style.left = (curX - 20) + 'px';
-            cursor.style.top = (curY - 20) + 'px';
+            curX += (mx - curX) * 0.25;
+            curY += (my - curY) * 0.25;
+            cursor.style.left = curX + 'px';
+            cursor.style.top = curY + 'px';
             requestAnimationFrame(tick);
         }
         tick();
 
         document.addEventListener('mousedown', e => {
+            cursor.style.transform = 'translate(-6px,-2px) scale(0.85)';
+            setTimeout(() => { cursor.style.transform = 'translate(-6px,-2px) scale(1)'; }, 120);
             const burst = document.createElement('div');
             burst.className = 'click-burst';
             burst.style.left = (e.clientX - 60) + 'px';
@@ -246,6 +247,36 @@
             document.body.appendChild(burst);
             setTimeout(() => burst.remove(), 600);
         });
+    }
+
+    // ==================== 3D FLOATING CARD ====================
+    function init3DCard() {
+        const scene = $('#scene3d');
+        const card = $('#card3d');
+        if (!scene || !card) return;
+        let isFlipped = false;
+
+        scene.addEventListener('mousemove', e => {
+            const rect = scene.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width - 0.5;
+            const y = (e.clientY - rect.top) / rect.height - 0.5;
+            const rotateY = x * 30 + (isFlipped ? 180 : 0);
+            const rotateX = -y * 20;
+            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+
+        scene.addEventListener('mouseleave', () => {
+            card.style.transform = `rotateX(0deg) rotateY(${isFlipped ? 180 : 0}deg)`;
+            card.style.transition = 'transform 0.5s ease-out';
+            setTimeout(() => { card.style.transition = 'transform 0.1s ease-out'; }, 500);
+        });
+
+        card.addEventListener('click', () => {
+            isFlipped = !isFlipped;
+            card.style.transform = `rotateX(0deg) rotateY(${isFlipped ? 180 : 0}deg)`;
+        });
+
+        card.style.animation = 'card3dFloat 4s ease-in-out infinite';
     }
 
     // ==================== WII CHANNEL ZOOM ====================
@@ -940,6 +971,7 @@
     createWaterShimmer();
     initParallax();
     initWiiCursor();
+    init3DCard();
     buildCarousel();
     renderLibrary();
     showToast('Welcome! Load a ROM to begin.', 'info');
