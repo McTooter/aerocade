@@ -124,8 +124,8 @@
             </div>
         </nav>
         <div class="sidebar-footer">
-            <button class="sidebar-footer-btn" id="btnAccount">
-                &#128100; Account
+            <button class="sidebar-footer-btn" id="btnAccount" data-view="miimaker">
+                &#128100; Profile
             </button>
             <button class="sidebar-footer-btn" id="btnLoadRom">
                 &#128194; Load ROM
@@ -341,87 +341,71 @@
             </div>
         </div>
 
-        <!-- Mii Maker View -->
+        <!-- Profile & Mii Maker View -->
         <div class="view" id="viewMiiMaker">
-            <div class="miimaker-wrap">
-                <div class="miimaker-header">
-                    <h3>&#128100; Mii Maker</h3>
-                    <p>Create your Mii avatar to represent you across SUMEE!</p>
-                </div>
-                <div class="miimaker-content">
-                    <div class="miimaker-preview-area">
-                        <div class="miimaker-mii-display" id="miiDisplay">
-                            <div class="mii-head" id="miiHead"></div>
-                            <div class="mii-body" id="miiBody"></div>
+            <div class="profile-wrap">
+                <!-- Not logged in: auth panel -->
+                <div class="profile-auth" id="profileAuth">
+                    <div class="profile-auth-card">
+                        <div class="profile-auth-avatar" id="profileAuthMii"></div>
+                        <h3 class="profile-auth-title">Welcome to SUMEE!</h3>
+                        <p class="profile-auth-sub">Sign in to create your Mii and save your library.</p>
+                        <div class="profile-auth-form" id="profileLoginForm">
+                            <input type="text" id="profileLoginUser" placeholder="Username" class="profile-input" maxlength="20">
+                            <input type="password" id="profileLoginPass" placeholder="Password" class="profile-input">
+                            <button class="profile-btn primary" id="profileLoginBtn">Sign In</button>
+                            <p class="profile-auth-switch">No account? <a href="#" id="profileShowReg">Create one</a></p>
                         </div>
-                        <div class="miimaker-name-input">
-                            <input type="text" id="miiNameInput" placeholder="Mii Name" maxlength="16">
+                        <div class="profile-auth-form" id="profileRegForm" style="display:none;">
+                            <input type="text" id="profileRegUser" placeholder="Choose a username" class="profile-input" maxlength="20">
+                            <input type="password" id="profileRegPass" placeholder="Password (4+ chars)" class="profile-input">
+                            <input type="password" id="profileRegConfirm" placeholder="Confirm password" class="profile-input">
+                            <button class="profile-btn primary" id="profileRegBtn">Create Account</button>
+                            <p class="profile-auth-switch">Already have one? <a href="#" id="profileShowLogin">Sign in</a></p>
                         </div>
-                    </div>
-                    <div class="miimaker-controls">
-                        <div class="miimaker-section">
-                            <div class="miimaker-section-title">Face Shape</div>
-                            <div class="miimaker-row" id="miiFaceRow"></div>
-                        </div>
-                        <div class="miimaker-section">
-                            <div class="miimaker-section-title">Skin Color</div>
-                            <div class="miimaker-row" id="miiSkinRow"></div>
-                        </div>
-                        <div class="miimaker-section">
-                            <div class="miimaker-section-title">Hair Style</div>
-                            <div class="miimaker-row" id="miiHairRow"></div>
-                        </div>
-                        <div class="miimaker-section">
-                            <div class="miimaker-section-title">Hair Color</div>
-                            <div class="miimaker-row" id="miiHairColorRow"></div>
-                        </div>
-                        <div class="miimaker-section">
-                            <div class="miimaker-section-title">Eyes</div>
-                            <div class="miimaker-row" id="miiEyesRow"></div>
-                        </div>
-                        <div class="miimaker-section">
-                            <div class="miimaker-section-title">Mouth</div>
-                            <div class="miimaker-row" id="miiMouthRow"></div>
-                        </div>
-                        <div class="miimaker-section">
-                            <div class="miimaker-section-title">Eyebrows</div>
-                            <div class="miimaker-row" id="miiBrowRow"></div>
-                        </div>
-                        <div class="miimaker-section">
-                            <div class="miimaker-section-title">Nose</div>
-                            <div class="miimaker-row" id="miiNoseRow"></div>
-                        </div>
-                        <div class="miimaker-section">
-                            <div class="miimaker-section-title">Facial Hair</div>
-                            <div class="miimaker-row" id="miiFacialHairRow"></div>
-                        </div>
-                        <div class="miimaker-section">
-                            <div class="miimaker-section-title">Glasses</div>
-                            <div class="miimaker-row" id="miiGlassesRow"></div>
-                        </div>
-                        <div class="miimaker-section">
-                            <div class="miimaker-section-title">Hat / Headwear</div>
-                            <div class="miimaker-row" id="miiHatRow"></div>
-                        </div>
-                        <div class="miimaker-section">
-                            <div class="miimaker-section-title">Shirt Color</div>
-                            <div class="miimaker-row" id="miiShirtRow"></div>
-                        </div>
-                        <div class="miimaker-section">
-                            <div class="miimaker-section-title">Body Type</div>
-                            <div class="miimaker-row" id="miiBodyRow"></div>
-                        </div>
-                        <div class="miimaker-section">
-                            <div class="miimaker-section-title">Accessories</div>
-                            <div class="miimaker-row" id="miiAccRow"></div>
-                        </div>
-                        <div class="miimaker-actions">
-                            <button class="miimaker-btn primary" id="miiSaveBtn">Save Mii</button>
-                            <button class="miimaker-btn" id="miiRandomBtn">Random</button>
+                        <div class="profile-auth-error" id="profileAuthError"></div>
+                        <div class="profile-saved-section" id="profileSavedSection">
+                            <div class="profile-saved-title">Switch Account</div>
+                            <div class="profile-saved-grid" id="profileSavedGrid"></div>
                         </div>
                     </div>
                 </div>
-                <div class="miimaker-saved" id="miiSavedList"></div>
+
+                <!-- Logged in: editor -->
+                <div class="profile-editor" id="profileEditor" style="display:none;">
+                    <div class="profile-editor-left">
+                        <div class="profile-mii-stage">
+                            <div class="profile-mii-bg"></div>
+                            <div class="profile-mii-svg" id="profileMiiSvg"></div>
+                            <div class="profile-mii-name" id="profileMiiDisplayName"></div>
+                            <div class="profile-mii-role" id="profileMiiRole"></div>
+                        </div>
+                        <input type="text" id="profileNameInput" class="profile-name-input" placeholder="Your name" maxlength="16">
+                        <div class="profile-actions-row">
+                            <button class="profile-btn" id="profileRandomBtn">🎲 Randomize</button>
+                            <button class="profile-btn primary" id="profileSaveBtn">💾 Save</button>
+                        </div>
+                        <div class="profile-actions-row">
+                            <button class="profile-btn" id="profileSignOutBtn">Sign Out</button>
+                        </div>
+                    </div>
+                    <div class="profile-editor-right">
+                        <div class="profile-tabs" id="profileTabs">
+                            <button class="profile-tab active" data-tab="face">Face</button>
+                            <button class="profile-tab" data-tab="hair">Hair</button>
+                            <button class="profile-tab" data-tab="eyes">Eyes</button>
+                            <button class="profile-tab" data-tab="features">Features</button>
+                            <button class="profile-tab" data-tab="style">Style</button>
+                        </div>
+                        <div class="profile-panels" id="profilePanels"></div>
+                    </div>
+                </div>
+
+                <!-- Saved accounts grid (always visible) -->
+                <div class="profile-saved-bottom" id="profileSavedBottom">
+                    <div class="profile-saved-title">Accounts</div>
+                    <div class="profile-saved-grid" id="profileSavedGridBottom"></div>
+                </div>
             </div>
         </div>
 
@@ -588,48 +572,6 @@
             <button class="gd-admin-edit-btn" id="gdAdminEdit" style="display:none;margin-top:8px;">&#9998; Edit Cover & Video</button>
         </div>
         <div class="gd-video-section"></div>
-    </div>
-</div>
-
-<!-- Account Modal -->
-<div class="modal-overlay" id="accountModal">
-    <div class="ac-modal">
-        <button class="gd-close" id="acClose">&times;</button>
-        <div class="ac-header">
-            <div class="ac-logo">S</div>
-            <h3 id="acTitle">Sign In</h3>
-        </div>
-        <div class="ac-body" id="acBody">
-            <div class="ac-form" id="acLoginForm">
-                <div class="ac-field">
-                    <label>Username</label>
-                    <input type="text" id="acUsername" placeholder="Enter username" maxlength="20">
-                </div>
-                <div class="ac-field">
-                    <label>Password</label>
-                    <input type="password" id="acPassword" placeholder="Enter password">
-                </div>
-                <button class="ac-btn primary" id="acSignInBtn">Sign In</button>
-                <p class="ac-switch">Don't have an account? <a href="#" id="acShowRegister">Create one</a></p>
-            </div>
-            <div class="ac-form" id="acRegisterForm" style="display:none;">
-                <div class="ac-field">
-                    <label>Username</label>
-                    <input type="text" id="acRegUsername" placeholder="Choose a username" maxlength="20">
-                </div>
-                <div class="ac-field">
-                    <label>Password</label>
-                    <input type="password" id="acRegPassword" placeholder="Choose a password">
-                </div>
-                <div class="ac-field">
-                    <label>Confirm Password</label>
-                    <input type="password" id="acRegConfirm" placeholder="Confirm password">
-                </div>
-                <button class="ac-btn primary" id="acRegisterBtn">Create Account</button>
-                <p class="ac-switch">Already have an account? <a href="#" id="acShowLogin">Sign in</a></p>
-            </div>
-        </div>
-        <div class="ac-error" id="acError"></div>
     </div>
 </div>
 

@@ -1197,7 +1197,6 @@
 
     document.addEventListener('click', e => {
         if (e.target.id === 'gameDetailModal' || e.target.closest('.gd-close')) closeGameDetail();
-        if (e.target.id === 'accountModal') e.target.classList.remove('show');
         if (e.target.id === 'gameEditModal') e.target.classList.remove('show');
     });
 
@@ -1336,24 +1335,73 @@
     renderLibrary();
     renderShopGrid('all');
     showToast('Welcome! Load a ROM to begin.', 'info');
-    initAccountSystem();
-    initMiiMaker();
+    initProfile();
 
-/* ==================== ACCOUNT SYSTEM ==================== */
-function initAccountSystem() {
+/* ==================== PROFILE (Auth + Mii Maker) ==================== */
+function initProfile() {
     const LS_KEY = 'aerocade_accounts';
     const SESSION_KEY = 'aerocade_session';
+
+    const FACES = ['oval','round','long','angular','soft'];
+    const SKINS = ['#fce7f3','#ffe4cc','#fcd34d','#f59e0b','#d4a574','#b08968','#92613e','#6b4423','#4a2c0f'];
+    const HAIR_STYLES = ['none','short','medium','long','ponytail','bun','spiky','curly','mohawk','buzzcut'];
+    const HAIR_COLORS = ['#1a1a2e','#78350f','#d97706','#ef4444','#8b5cf6','#ec4899','#f3f4f6','#fcd34d'];
+    const EYE_SHAPES = ['normal','big','small','narrow','wide','sleepy','bright'];
+    const EYE_COLORS = ['#1e293b','#2563eb','#059669','#78350f','#8b5cf6','#f97316'];
+    const NOSE_SHAPES = ['small','medium','large','pointed','round','flat'];
+    const MOUTH_SHAPES = ['smile','neutral','open','smirk','grin','pout'];
+    const BROW_STYLES = ['normal','thick','thin','arched','flat','angry'];
+    const GLASSES_SET = ['none','round','square','aviator','cat-eye','half-rim'];
+    const HAT_SET = ['none','cap','beanie','tophat','headband','bow'];
+    const SHIRT_COLORS = ['#4a5568','#dc2626','#2563eb','#059669','#d97706','#7c3aed','#ec4899','#1e293b','#f97316','#06b6d4'];
+    const BODY_TYPES = ['normal','slim','wide','tall','short'];
+    const BODY_COLORS = ['#4a5568','#2563eb','#dc2626','#059669','#1e293b'];
+    const ACCESSORIES = ['none','earring','necklace','scarf','bowtie'];
+
+    const DEFAULT_MII = {
+        face: 'oval', skin: '#fce7f3', hair: 'short', hairColor: '#1a1a2e',
+        eyeShape: 'normal', eyeColor: '#1e293b', nose: 'small', mouth: 'smile',
+        brows: 'normal', glasses: 'none', hat: 'none', shirtColor: '#4a5568',
+        bodyType: 'normal', bodyColor: '#4a5568', accessory: 'none'
+    };
+
+    let currentMii = { ...DEFAULT_MII };
+    let activeTab = 'face';
+
+    const TAB_ITEMS = {
+        face: [
+            { label: 'Face Shape', key: 'face', items: FACES },
+            { label: 'Skin', key: 'skin', items: SKINS, color: true }
+        ],
+        hair: [
+            { label: 'Style', key: 'hair', items: HAIR_STYLES },
+            { label: 'Color', key: 'hairColor', items: HAIR_COLORS, color: true }
+        ],
+        eyes: [
+            { label: 'Shape', key: 'eyeShape', items: EYE_SHAPES },
+            { label: 'Color', key: 'eyeColor', items: EYE_COLORS, color: true }
+        ],
+        features: [
+            { label: 'Nose', key: 'nose', items: NOSE_SHAPES },
+            { label: 'Mouth', key: 'mouth', items: MOUTH_SHAPES },
+            { label: 'Brows', key: 'brows', items: BROW_STYLES },
+            { label: 'Glasses', key: 'glasses', items: GLASSES_SET }
+        ],
+        style: [
+            { label: 'Hat', key: 'hat', items: HAT_SET },
+            { label: 'Shirt', key: 'shirtColor', items: SHIRT_COLORS, color: true },
+            { label: 'Body Type', key: 'bodyType', items: BODY_TYPES },
+            { label: 'Body Color', key: 'bodyColor', items: BODY_COLORS, color: true },
+            { label: 'Accessory', key: 'accessory', items: ACCESSORIES }
+        ]
+    };
 
     function getAccounts() { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }
     function saveAccounts(a) { localStorage.setItem(LS_KEY, JSON.stringify(a)); }
     function getSession() { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
     function saveSession(s) { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
     function clearSession() { localStorage.removeItem(SESSION_KEY); }
-
-    function isAdmin() {
-        const s = getSession();
-        return s && s.role === 'admin';
-    }
+    function isAdmin() { const s = getSession(); return s && s.role === 'admin'; }
 
     function updateSidebarUser() {
         const s = getSession();
@@ -1363,99 +1411,403 @@ function initAccountSystem() {
         const roleEl = document.getElementById('sidebarUserRole');
         if (!s) { el.style.display = 'none'; return; }
         el.style.display = 'flex';
-        miiEl.innerHTML = s.mii?.face || '🙂';
+        miiEl.innerHTML = renderMiiSvg(s.mii || DEFAULT_MII, 36, 42);
         miiEl.style.background = `linear-gradient(135deg, ${s.mii?.skin || '#fce7f3'}, ${s.mii?.shirtColor || '#4a5568'})`;
         nameEl.textContent = s.username;
         roleEl.textContent = s.role === 'admin' ? '★ Admin' : 'Member';
-        if (s.role === 'admin') roleEl.style.color = '#818cf8';
+        roleEl.style.color = s.role === 'admin' ? '#818cf8' : '';
     }
 
-    const acctModal = document.getElementById('accountModal');
-    const acTitle = document.getElementById('acTitle');
-    const acLoginForm = document.getElementById('acLoginForm');
-    const acRegisterForm = document.getElementById('acRegisterForm');
-    const acError = document.getElementById('acError');
-
-    function showAcctError(msg) { acError.textContent = msg; acError.classList.add('show'); }
-    function hideAcctError() { acError.classList.remove('show'); }
-
-    document.getElementById('btnAccount').addEventListener('click', () => {
-        const s = getSession();
-        if (s) {
-            clearSession();
-            updateSidebarUser();
-            showToast('Signed out.', 'info');
-            return;
-        }
-        hideAcctError();
-        acTitle.textContent = 'Sign In';
-        acLoginForm.style.display = 'block';
-        acRegisterForm.style.display = 'none';
-        acctModal.classList.add('show');
-    });
-
-    document.getElementById('acClose').addEventListener('click', () => {
-        acctModal.classList.remove('show');
-    });
-
-    document.getElementById('acShowRegister').addEventListener('click', (e) => {
-        e.preventDefault();
-        hideAcctError();
-        acTitle.textContent = 'Create Account';
-        acLoginForm.style.display = 'none';
-        acRegisterForm.style.display = 'block';
-    });
-
-    document.getElementById('acShowLogin').addEventListener('click', (e) => {
-        e.preventDefault();
-        hideAcctError();
-        acTitle.textContent = 'Sign In';
-        acLoginForm.style.display = 'block';
-        acRegisterForm.style.display = 'none';
-    });
-
-    document.getElementById('acSignInBtn').addEventListener('click', () => {
-        const u = document.getElementById('acUsername').value.trim();
-        const p = document.getElementById('acPassword').value;
-        hideAcctError();
-        if (!u || !p) { showAcctError('Please fill in all fields.'); return; }
-        const accounts = getAccounts();
-        if (!accounts[u]) { showAcctError('Account not found.'); return; }
-        if (accounts[u].password !== p) { showAcctError('Wrong password.'); return; }
-        saveSession({ username: u, role: accounts[u].role, mii: accounts[u].mii });
-        acctModal.classList.remove('show');
-        updateSidebarUser();
-        updateAdminUI();
-        showToast(`Welcome back, ${u}!`, 'success');
-    });
-
-    document.getElementById('acRegisterBtn').addEventListener('click', () => {
-        const u = document.getElementById('acRegUsername').value.trim();
-        const p = document.getElementById('acRegPassword').value;
-        const c = document.getElementById('acRegConfirm').value;
-        hideAcctError();
-        if (!u || !p) { showAcctError('Please fill in all fields.'); return; }
-        if (p.length < 4) { showAcctError('Password must be 4+ characters.'); return; }
-        if (p !== c) { showAcctError('Passwords do not match.'); return; }
-        const accounts = getAccounts();
-        if (accounts[u]) { showAcctError('Username taken.'); return; }
-        const defaultMii = { face: '🙂', skin: '#fce7f3', hair: 'none', hairColor: '#f3e8ff', eyes: '●●', nose: '•', mouth: '😀', brows: '⌒⌒', facialHair: '', glasses: '', hat: '', shirtColor: '#4a5568', bodyType: 'normal', acc: '' };
-        accounts[u] = { password: p, role: 'member', mii: defaultMii, created: Date.now() };
-        saveAccounts(accounts);
-        saveSession({ username: u, role: 'member', mii: defaultMii });
-        acctModal.classList.remove('show');
-        updateSidebarUser();
-        updateAdminUI();
-        showToast(`Account created! Welcome, ${u}!`, 'success');
-    });
-
-    // Admin Edit — show/hide edit button in game detail modal
     function updateAdminUI() {
         const editBtn = document.getElementById('gdAdminEdit');
         if (editBtn) editBtn.style.display = isAdmin() ? 'block' : 'none';
     }
 
-    // Admin edit button in game detail modal
+    // === SVG Mii Renderer ===
+    function renderMiiSvg(mii, w, h) {
+        w = w || 180; h = h || 220;
+        const m = { ...DEFAULT_MII, ...mii };
+        const skin = m.skin;
+        const shirt = m.shirtColor || m.bodyColor || '#4a5568';
+        const bodyH = { normal: 70, slim: 55, wide: 80, tall: 90, short: 45 }[m.bodyType] || 70;
+        const bodyW = { normal: 100, slim: 75, wide: 130, tall: 100, short: 100 }[m.bodyType] || 100;
+        const headCX = w / 2, headCY = 75, headR = 50;
+
+        let svg = `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
+        svg += `<defs><radialGradient id="sk${w}" cx="40%" cy="35%"><stop offset="0%" stop-color="${lighten(skin,25)}"/><stop offset="100%" stop-color="${skin}"/></radialGradient></defs>`;
+
+        // Body
+        const bx = (w - bodyW) / 2, by = h - bodyH;
+        svg += `<path d="M${bx + 15},${by} Q${bx},${by + 15} ${bx},${by + bodyH * 0.6} L${bx},${by + bodyH} L${bx + bodyW},${by + bodyH} L${bx + bodyW},${by + bodyH * 0.6} Q${bx + bodyW},${by + 15} ${bx + bodyW - 15},${by} Z" fill="${shirt}" rx="12"/>`;
+
+        // Head
+        svg += `<ellipse cx="${headCX}" cy="${headCY}" rx="${headR}" ry="${headR * 1.05}" fill="url(#sk${w})" stroke="${darken(skin,15)}" stroke-width="1"/>`;
+
+        // Hair
+        const hairPaths = {
+            none: '',
+            short: `<path d="M${headCX - 45},${headCY - 20} Q${headCX - 50},${headCY - 55} ${headCX},${headCY - 58} Q${headCX + 50},${headCY - 55} ${headCX + 45},${headCY - 20}" fill="${m.hairColor}" />`,
+            medium: `<path d="M${headCX - 48},${headCY - 5} Q${headCX - 52},${headCY - 58} ${headCX},${headCY - 62} Q${headCX + 52},${headCY - 58} ${headCX + 48},${headCY - 5} L${headCX + 46},${headCY + 15} Q${headCX + 40},${headCY + 5} ${headCX},${headCY + 2} Q${headCX - 40},${headCY + 5} ${headCX - 46},${headCY + 15} Z" fill="${m.hairColor}"/>`,
+            long: `<path d="M${headCX - 48},${headCY - 5} Q${headCX - 52},${headCY - 58} ${headCX},${headCY - 62} Q${headCX + 52},${headCY - 58} ${headCX + 48},${headCY - 5} L${headCX + 50},${headCY + 40} Q${headCX + 42},${headCY + 25} ${headCX},${headCY + 22} Q${headCX - 42},${headCY + 25} ${headCX - 50},${headCY + 40} Z" fill="${m.hairColor}"/>`,
+            ponytail: `<path d="M${headCX - 45},${headCY - 20} Q${headCX - 50},${headCY - 55} ${headCX},${headCY - 58} Q${headCX + 50},${headCY - 55} ${headCX + 45},${headCY - 20}" fill="${m.hairColor}"/><path d="M${headCX + 35},${headCY - 30} Q${headCX + 60},${headCY - 25} ${headCX + 55},${headCY + 30} Q${headCX + 50},${headCY + 40} ${headCX + 42},${headCY + 30}" fill="${m.hairColor}"/>`,
+            bun: `<path d="M${headCX - 45},${headCY - 20} Q${headCX - 50},${headCY - 55} ${headCX},${headCY - 58} Q${headCX + 50},${headCY - 55} ${headCX + 45},${headCY - 20}" fill="${m.hairColor}"/><circle cx="${headCX}" cy="${headCY - 58}" r="15" fill="${m.hairColor}"/>`,
+            spiky: `<path d="M${headCX - 45},${headCY - 15} L${headCX - 40},${headCY - 60} L${headCX - 25},${headCY - 30} L${headCX - 15},${headCY - 68} L${headCX},${headCY - 35} L${headCX + 15},${headCY - 68} L${headCX + 25},${headCY - 30} L${headCX + 40},${headCY - 60} L${headCX + 45},${headCY - 15}" fill="${m.hairColor}"/>`,
+            curly: `<path d="M${headCX - 48},${headCY - 15} Q${headCX - 55},${headCY - 55} ${headCX},${headCY - 60} Q${headCX + 55},${headCY - 55} ${headCX + 48},${headCY - 15}" fill="${m.hairColor}"/><circle cx="${headCX - 35}" cy="${headCY - 40}" r="12" fill="${m.hairColor}"/><circle cx="${headCX + 35}" cy="${headCY - 40}" r="12" fill="${m.hairColor}"/><circle cx="${headCX}" cy="${headCY - 55}" r="13" fill="${m.hairColor}"/>`,
+            mohawk: `<path d="M${headCX - 8},${headCY - 25} Q${headCX - 12},${headCY - 75} ${headCX},${headCY - 80} Q${headCX + 12},${headCY - 75} ${headCX + 8},${headCY - 25}" fill="${m.hairColor}"/>`,
+            buzzcut: `<path d="M${headCX - 42},${headCY - 25} Q${headCX - 48},${headCY - 52} ${headCX},${headCY - 55} Q${headCX + 48},${headCY - 52} ${headCX + 42},${headCY - 25}" fill="${m.hairColor}" opacity="0.7"/>`
+        };
+        svg += hairPaths[m.hair] || '';
+
+        // Eyes
+        const eyeOffX = 18, eyeY = headCY + 2;
+        const eyeShapes = {
+            normal: (x, y) => `<ellipse cx="${x}" cy="${y}" rx="6" ry="7" fill="white" stroke="#334155" stroke-width="1"/><circle cx="${x + 1}" cy="${y + 1}" r="4" fill="${m.eyeColor}"/><circle cx="${x + 2.5}" cy="${y - 1}" r="1.5" fill="white"/>`,
+            big: (x, y) => `<ellipse cx="${x}" cy="${y}" rx="8" ry="9" fill="white" stroke="#334155" stroke-width="1"/><circle cx="${x + 1}" cy="${y + 1}" r="5.5" fill="${m.eyeColor}"/><circle cx="${x + 3}" cy="${y - 2}" r="2" fill="white"/>`,
+            small: (x, y) => `<ellipse cx="${x}" cy="${y}" rx="4" ry="4.5" fill="white" stroke="#334155" stroke-width="1"/><circle cx="${x + 0.5}" cy="${y + 0.5}" r="2.8" fill="${m.eyeColor}"/><circle cx="${x + 1.5}" cy="${y - 0.5}" r="1" fill="white"/>`,
+            narrow: (x, y) => `<ellipse cx="${x}" cy="${y}" rx="7" ry="3.5" fill="white" stroke="#334155" stroke-width="1"/><ellipse cx="${x + 1}" cy="${y}" rx="3" ry="2.8" fill="${m.eyeColor}"/>`,
+            wide: (x, y) => `<circle cx="${x}" cy="${y}" r="9" fill="white" stroke="#334155" stroke-width="1"/><circle cx="${x + 1}" cy="${y + 1}" r="6" fill="${m.eyeColor}"/><circle cx="${x + 3}" cy="${y - 2}" r="2.5" fill="white"/>`,
+            sleepy: (x, y) => `<ellipse cx="${x}" cy="${y + 2}" rx="6" ry="4" fill="white" stroke="#334155" stroke-width="1"/><circle cx="${x}" cy="${y + 3}" r="3.5" fill="${m.eyeColor}"/><path d="M${x - 7},${y - 3} Q${x},${y - 5} ${x + 7},${y - 2}" fill="none" stroke="#334155" stroke-width="1.5"/>`,
+            bright: (x, y) => `<ellipse cx="${x}" cy="${y}" rx="7" ry="8" fill="white" stroke="#334155" stroke-width="1"/><circle cx="${x}" cy="${y}" r="5" fill="${m.eyeColor}"/><circle cx="${x + 2}" cy="${y - 2}" r="2.5" fill="white"/><circle cx="${x - 1.5}" cy="${y + 2}" r="1" fill="white" opacity="0.6"/>`
+        };
+        const drawEye = eyeShapes[m.eyeShape] || eyeShapes.normal;
+        svg += drawEye(headCX - eyeOffX, eyeY);
+        svg += drawEye(headCX + eyeOffX, eyeY);
+
+        // Brows
+        const browY = eyeY - 14;
+        const brows = {
+            normal: `<path d="M${headCX - 25},${browY} Q${headCX - 18},${browY - 5} ${headCX - 11},${browY}" fill="none" stroke="${darken(m.hairColor, 10)}" stroke-width="2" stroke-linecap="round"/><path d="M${headCX + 11},${browY} Q${headCX + 18},${browY - 5} ${headCX + 25},${browY}" fill="none" stroke="${darken(m.hairColor, 10)}" stroke-width="2" stroke-linecap="round"/>`,
+            thick: `<path d="M${headCX - 26},${browY + 1} Q${headCX - 18},${browY - 6} ${headCX - 10},${browY + 1}" fill="${darken(m.hairColor, 10)}"/><path d="M${headCX + 10},${browY + 1} Q${headCX + 18},${browY - 6} ${headCX + 26},${browY + 1}" fill="${darken(m.hairColor, 10)}"/>`,
+            thin: `<line x1="${headCX - 25}" y1="${browY}" x2="${headCX - 11}" y2="${browY - 1}" stroke="${darken(m.hairColor, 10)}" stroke-width="1" stroke-linecap="round"/><line x1="${headCX + 11}" y1="${browY - 1}" x2="${headCX + 25}" y2="${browY}" stroke="${darken(m.hairColor, 10)}" stroke-width="1" stroke-linecap="round"/>`,
+            arched: `<path d="M${headCX - 26},${browY + 2} Q${headCX - 18},${browY - 8} ${headCX - 10},${browY + 2}" fill="none" stroke="${darken(m.hairColor, 10)}" stroke-width="1.8" stroke-linecap="round"/><path d="M${headCX + 10},${browY + 2} Q${headCX + 18},${browY - 8} ${headCX + 26},${browY + 2}" fill="none" stroke="${darken(m.hairColor, 10)}" stroke-width="1.8" stroke-linecap="round"/>`,
+            flat: `<line x1="${headCX - 26}" y1="${browY}" x2="${headCX - 10}" y2="${browY}" stroke="${darken(m.hairColor, 10)}" stroke-width="2.5" stroke-linecap="butt"/><line x1="${headCX + 10}" y1="${browY}" x2="${headCX + 26}" y2="${browY}" stroke="${darken(m.hairColor, 10)}" stroke-width="2.5" stroke-linecap="butt"/>`,
+            angry: `<path d="M${headCX - 26},${browY + 4} L${headCX - 10},${browY - 2}" stroke="${darken(m.hairColor, 10)}" stroke-width="2" stroke-linecap="round"/><path d="M${headCX + 10},${browY - 2} L${headCX + 26},${browY + 4}" stroke="${darken(m.hairColor, 10)}" stroke-width="2" stroke-linecap="round"/>`
+        };
+        svg += brows[m.brows] || brows.normal;
+
+        // Nose
+        const noseY = eyeY + 14;
+        const noses = {
+            small: `<ellipse cx="${headCX}" cy="${noseY}" rx="3" ry="2.5" fill="${darken(skin, 12)}" opacity="0.6"/>`,
+            medium: `<path d="M${headCX - 4},${noseY - 3} L${headCX},${noseY + 4} L${headCX + 4},${noseY - 3}" fill="none" stroke="${darken(skin, 15)}" stroke-width="1.2" stroke-linecap="round"/>`,
+            large: `<ellipse cx="${headCX}" cy="${noseY}" rx="6" ry="5" fill="${darken(skin, 10)}" opacity="0.5"/>`,
+            pointed: `<path d="M${headCX},${noseY - 5} L${headCX - 3},${noseY + 3} L${headCX + 3},${noseY + 3} Z" fill="${darken(skin, 10)}" opacity="0.5"/>`,
+            round: `<circle cx="${headCX}" cy="${noseY}" r="4" fill="${darken(skin, 10)}" opacity="0.5"/>`,
+            flat: `<line x1="${headCX - 4}" y1="${noseY}" x2="${headCX + 4}" y2="${noseY}" stroke="${darken(skin, 15)}" stroke-width="1.5" stroke-linecap="round"/>`
+        };
+        svg += noses[m.nose] || noses.small;
+
+        // Mouth
+        const mouthY = noseY + 14;
+        const mouths = {
+            smile: `<path d="M${headCX - 10},${mouthY - 2} Q${headCX},${mouthY + 8} ${headCX + 10},${mouthY - 2}" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round"/>`,
+            neutral: `<line x1="${headCX - 8}" y1="${mouthY}" x2="${headCX + 8}" y2="${mouthY}" stroke="#e74c3c" stroke-width="2" stroke-linecap="round"/>`,
+            open: `<ellipse cx="${headCX}" cy="${mouthY + 2}" rx="8" ry="5" fill="#c0392b"/><ellipse cx="${headCX}" cy="${mouthY + 1}" rx="6" ry="3" fill="#e74c3c"/>`,
+            smirk: `<path d="M${headCX - 8},${mouthY} Q${headCX + 2},${mouthY + 6} ${headCX + 10},${mouthY - 2}" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round"/>`,
+            grin: `<path d="M${headCX - 11},${mouthY - 1} Q${headCX},${mouthY + 10} ${headCX + 11},${mouthY - 1}" fill="#fff" stroke="#e74c3c" stroke-width="1.5"/><line x1="${headCX - 9}" y1="${mouthY}" x2="${headCX + 9}" y2="${mouthY}" stroke="#e74c3c" stroke-width="1"/>`,
+            pout: `<path d="M${headCX - 8},${mouthY + 4} Q${headCX},${mouthY - 2} ${headCX + 8},${mouthY + 4}" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round"/>`
+        };
+        svg += mouths[m.mouth] || mouths.smile;
+
+        // Glasses
+        if (m.glasses !== 'none') {
+            const glasses = {
+                round: `<circle cx="${headCX - 18}" cy="${eyeY}" r="10" fill="none" stroke="#334155" stroke-width="1.5"/><circle cx="${headCX + 18}" cy="${eyeY}" r="10" fill="none" stroke="#334155" stroke-width="1.5"/><line x1="${headCX - 8}" y1="${eyeY}" x2="${headCX + 8}" y2="${eyeY}" stroke="#334155" stroke-width="1.5"/>`,
+                square: `<rect x="${headCX - 27}" y="${eyeY - 8}" width="16" height="14" rx="2" fill="none" stroke="#334155" stroke-width="1.5"/><rect x="${headCX + 11}" y="${eyeY - 8}" width="16" height="14" rx="2" fill="none" stroke="#334155" stroke-width="1.5"/><line x1="${headCX - 11}" y1="${eyeY}" x2="${headCX + 11}" y2="${eyeY}" stroke="#334155" stroke-width="1.5"/>`,
+                aviator: `<path d="M${headCX - 28},${eyeY - 6} Q${headCX - 18},${eyeY - 12} ${headCX - 8},${eyeY - 6} Q${headCX - 18},${eyeY + 10} ${headCX - 28},${eyeY - 6}" fill="none" stroke="#78350f" stroke-width="1.5"/><path d="M${headCX + 8},${eyeY - 6} Q${headCX + 18},${eyeY - 12} ${headCX + 28},${eyeY - 6} Q${headCX + 18},${eyeY + 10} ${headCX + 8},${eyeY - 6}" fill="none" stroke="#78350f" stroke-width="1.5"/><line x1="${headCX - 8}" y1="${eyeY}" x2="${headCX + 8}" y2="${eyeY}" stroke="#78350f" stroke-width="1.5"/>`,
+                'cat-eye': `<path d="M${headCX - 28},${eyeY + 2} L${headCX - 25},${eyeY - 9} L${headCX - 9},${eyeY - 7} L${headCX - 8},${eyeY + 5} Z" fill="none" stroke="#334155" stroke-width="1.5"/><path d="M${headCX + 8},${eyeY + 5} L${headCX + 9},${eyeY - 7} L${headCX + 25},${eyeY - 9} L${headCX + 28},${eyeY + 2} Z" fill="none" stroke="#334155" stroke-width="1.5"/><line x1="${headCX - 8}" y1="${eyeY}" x2="${headCX + 8}" y2="${eyeY}" stroke="#334155" stroke-width="1.5"/>`,
+                'half-rim': `<line x1="${headCX - 27}" y1="${eyeY}" x2="${headCX - 9}" y2="${eyeY}" stroke="#334155" stroke-width="1.8"/><path d="M${headCX - 27},${eyeY} Q${headCX - 18},${eyeY + 10} ${headCX - 9},${eyeY}" fill="none" stroke="#334155" stroke-width="1.2"/><line x1="${headCX + 9}" y1="${eyeY}" x2="${headCX + 27}" y2="${eyeY}" stroke="#334155" stroke-width="1.8"/><path d="M${headCX + 9},${eyeY} Q${headCX + 18},${eyeY + 10} ${headCX + 27},${eyeY}" fill="none" stroke="#334155" stroke-width="1.2"/><line x1="${headCX - 9}" y1="${eyeY}" x2="${headCX + 9}" y2="${eyeY}" stroke="#334155" stroke-width="1.5"/>`
+            };
+            svg += glasses[m.glasses] || glasses.round;
+        }
+
+        // Hat
+        if (m.hat !== 'none') {
+            const hats = {
+                cap: `<ellipse cx="${headCX}" cy="${headCY - 50}" rx="42" ry="12" fill="#2563eb"/><path d="M${headCX - 42},${headCY - 50} Q${headCX - 42},${headCY - 70} ${headCX},${headCY - 72} Q${headCX + 42},${headCY - 70} ${headCX + 42},${headCY - 50}" fill="#2563eb"/><rect x="${headCX + 20}" y="${headCY - 58}" width="30" height="8" rx="3" fill="#1d4ed8"/>`,
+                beanie: `<path d="M${headCX - 42},${headCY - 38} Q${headCX - 45},${headCY - 65} ${headCX},${headCY - 72} Q${headCX + 45},${headCY - 65} ${headCX + 42},${headCY - 38}" fill="#dc2626"/><ellipse cx="${headCX}" cy="${headCY - 38}" rx="44" ry="8" fill="#b91c1c"/><circle cx="${headCX}" cy="${headCY - 72}" r="6" fill="#f3f4f6"/>`,
+                tophat: `<rect x="${headCX - 30}" y="${headCY - 90}" width="60" height="40" rx="5" fill="#1e293b"/><ellipse cx="${headCX}" cy="${headCY - 50}" rx="42" ry="6" fill="#1e293b"/><rect x="${headCX - 28}" y="${headCY - 55}" width="56" height="6" fill="#7c3aed"/>`,
+                headband: `<rect x="${headCX - 44}" y="${headCY - 40}" width="88" height="6" rx="3" fill="#ef4444"/>`,
+                bow: `<path d="M${headCX},${headCY - 50} Q${headCX - 15},${headCY - 65} ${headCX - 25},${headCY - 50} Q${headCX - 15},${headCY - 40} ${headCX},${headCY - 50}" fill="#ec4899"/><path d="M${headCX},${headCY - 50} Q${headCX + 15},${headCY - 65} ${headCX + 25},${headCY - 50} Q${headCX + 15},${headCY - 40} ${headCX},${headCY - 50}" fill="#ec4899"/><circle cx="${headCX}" cy="${headCY - 50}" r="3" fill="#be185d"/>`
+            };
+            svg += hats[m.hat] || '';
+        }
+
+        // Accessory
+        if (m.accessory === 'earring') {
+            svg += `<circle cx="${headCX - 52}" cy="${headCY + 15}" r="3" fill="#f59e0b" stroke="#d97706" stroke-width="0.5"/>`;
+            svg += `<circle cx="${headCX + 52}" cy="${headCY + 15}" r="3" fill="#f59e0b" stroke="#d97706" stroke-width="0.5"/>`;
+        } else if (m.accessory === 'necklace') {
+            svg += `<path d="M${headCX - 15},${by + 5} Q${headCX},${by + 18} ${headCX + 15},${by + 5}" fill="none" stroke="#f59e0b" stroke-width="1.5"/>`;
+            svg += `<circle cx="${headCX}" cy="${by + 15}" r="3" fill="#f59e0b" stroke="#d97706" stroke-width="0.5"/>`;
+        } else if (m.accessory === 'bowtie') {
+            svg += `<path d="M${headCX},${by + 3} L${headCX - 10},${by - 3} L${headCX - 10},${by + 9} Z" fill="#ef4444"/><path d="M${headCX},${by + 3} L${headCX + 10},${by - 3} L${headCX + 10},${by + 9} Z" fill="#ef4444"/><circle cx="${headCX}" cy="${headCY + 50}" r="2.5" fill="#dc2626"/>`;
+        } else if (m.accessory === 'scarf') {
+            svg += `<path d="M${headCX - 20},${by + 2} Q${headCX},${by + 12} ${headCX + 20},${by + 2}" fill="#3b82f6" stroke="#2563eb" stroke-width="0.5"/><rect x="${headCX - 4}" y="${by + 5}" width="8" height="18" rx="3" fill="#3b82f6"/>`;
+        }
+
+        svg += '</svg>';
+        return svg;
+    }
+
+    function lighten(hex, pct) {
+        const num = parseInt(hex.replace('#', ''), 16);
+        const r = Math.min(255, (num >> 16) + Math.round(2.55 * pct));
+        const g = Math.min(255, ((num >> 8) & 0xff) + Math.round(2.55 * pct));
+        const b = Math.min(255, (num & 0xff) + Math.round(2.55 * pct));
+        return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+    }
+
+    function darken(hex, pct) {
+        const num = parseInt(hex.replace('#', ''), 16);
+        const r = Math.max(0, (num >> 16) - Math.round(2.55 * pct));
+        const g = Math.max(0, ((num >> 8) & 0xff) - Math.round(2.55 * pct));
+        const b = Math.max(0, (num & 0xff) - Math.round(2.55 * pct));
+        return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+    }
+
+    // === Render SVG into stage ===
+    function renderStage() {
+        const svgEl = document.getElementById('profileMiiSvg');
+        if (svgEl) svgEl.innerHTML = renderMiiSvg(currentMii);
+        const nameEl = document.getElementById('profileMiiDisplayName');
+        if (nameEl) nameEl.textContent = document.getElementById('profileNameInput')?.value || 'Your Mii';
+        const roleEl = document.getElementById('profileMiiRole');
+        if (roleEl) {
+            const s = getSession();
+            roleEl.textContent = s ? (s.role === 'admin' ? '★ Admin' : 'Member') : '';
+        }
+    }
+
+    // === Tab / Panel System ===
+    function renderPanels() {
+        const panels = document.getElementById('profilePanels');
+        if (!panels) return;
+        const defs = TAB_ITEMS[activeTab] || [];
+        let html = '';
+        defs.forEach(def => {
+            html += `<div class="profile-panel-section"><div class="profile-panel-label">${def.label}</div><div class="profile-panel-row">`;
+            def.items.forEach(item => {
+                const val = currentMii[def.key];
+                const isActive = val === item;
+                if (def.color) {
+                    html += `<div class="profile-color${isActive ? ' active' : ''}" data-key="${def.key}" data-val="${item}" style="background:${item}"></div>`;
+                } else {
+                    html += `<div class="profile-chip${isActive ? ' active' : ''}" data-key="${def.key}" data-val="${item}">${item === 'none' ? 'None' : item}</div>`;
+                }
+            });
+            html += '</div></div>';
+        });
+        panels.innerHTML = html;
+
+        panels.querySelectorAll('.profile-chip, .profile-color').forEach(el => {
+            el.addEventListener('click', () => {
+                currentMii[el.dataset.key] = el.dataset.val;
+                renderStage();
+                renderPanels();
+            });
+        });
+    }
+
+    function switchTab(tab) {
+        activeTab = tab;
+        document.querySelectorAll('.profile-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+        renderPanels();
+    }
+
+    // === Saved Accounts Grid (reusable for auth + bottom) ===
+    function renderSavedAccounts(containerId, showSwitch) {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        const accounts = getAccounts();
+        const session = getSession();
+        const names = Object.keys(accounts);
+        if (!names.length) { el.innerHTML = ''; return; }
+        let html = '';
+        names.forEach(name => {
+            const a = accounts[name];
+            const mii = { ...DEFAULT_MII, ...(a.mii || {}) };
+            const isActive = session?.username === name;
+            const roleLabel = a.role === 'admin' ? '★ Admin' : 'Member';
+            html += `<div class="profile-saved-card${isActive ? ' active' : ''}" data-user="${name}">
+                <div class="profile-saved-mini">${renderMiiSvg(mii, 40, 48)}</div>
+                <div class="profile-saved-card-name">${name}</div>
+                <div class="profile-saved-card-role">${roleLabel}</div>
+                <button class="profile-saved-card-del" data-del="${name}">&times;</button>
+            </div>`;
+        });
+        el.innerHTML = html;
+
+        if (showSwitch) {
+            el.querySelectorAll('.profile-saved-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    if (e.target.closest('.profile-saved-card-del')) return;
+                    const name = card.dataset.user;
+                    const a = accounts[name];
+                    saveSession({ username: name, role: a.role, mii: a.mii });
+                    currentMii = { ...DEFAULT_MII, ...(a.mii || {}) };
+                    document.getElementById('profileNameInput').value = name;
+                    showEditor();
+                    renderStage();
+                    renderPanels();
+                    renderSavedAccounts('profileSavedGrid', true);
+                    renderSavedAccounts('profileSavedGridBottom', false);
+                    updateSidebarUser();
+                    updateAdminUI();
+                    showToast(`Switched to ${name}`, 'success');
+                });
+            });
+        }
+
+        el.querySelectorAll('.profile-saved-card-del').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const name = btn.dataset.del;
+                if (!confirm(`Delete account "${name}"?`)) return;
+                const accts = getAccounts();
+                delete accts[name];
+                saveAccounts(accts);
+                const s = getSession();
+                if (s?.username === name) clearSession();
+                renderSavedAccounts('profileSavedGrid', true);
+                renderSavedAccounts('profileSavedGridBottom', false);
+                if (!getSession()) showAuth();
+                updateSidebarUser();
+                updateAdminUI();
+                showToast(`Account "${name}" deleted.`, 'info');
+            });
+        });
+    }
+
+    function showAuth() {
+        const auth = document.getElementById('profileAuth');
+        const editor = document.getElementById('profileEditor');
+        if (auth) auth.style.display = '';
+        if (editor) editor.style.display = 'none';
+        renderSavedAccounts('profileSavedGrid', true);
+        const miiEl = document.getElementById('profileAuthMii');
+        if (miiEl) miiEl.innerHTML = renderMiiSvg(DEFAULT_MII, 64, 64);
+    }
+
+    function showEditor() {
+        const auth = document.getElementById('profileAuth');
+        const editor = document.getElementById('profileEditor');
+        if (auth) auth.style.display = 'none';
+        if (editor) editor.style.display = '';
+        const s = getSession();
+        if (s) {
+            document.getElementById('profileNameInput').value = s.username;
+            currentMii = { ...DEFAULT_MII, ...(s.mii || {}) };
+        }
+        renderStage();
+        renderPanels();
+    }
+
+    // === Auth Handlers ===
+    document.getElementById('profileLoginBtn')?.addEventListener('click', () => {
+        const u = document.getElementById('profileLoginUser').value.trim();
+        const p = document.getElementById('profileLoginPass').value;
+        const err = document.getElementById('profileAuthError');
+        err.textContent = '';
+        if (!u || !p) { err.textContent = 'Please fill in all fields.'; return; }
+        const accounts = getAccounts();
+        if (!accounts[u]) { err.textContent = 'Account not found.'; return; }
+        if (accounts[u].password !== p) { err.textContent = 'Wrong password.'; return; }
+        saveSession({ username: u, role: accounts[u].role, mii: accounts[u].mii });
+        currentMii = { ...DEFAULT_MII, ...(accounts[u].mii || {}) };
+        showEditor();
+        updateSidebarUser();
+        updateAdminUI();
+        renderSavedAccounts('profileSavedGridBottom', false);
+        showToast(`Welcome back, ${u}!`, 'success');
+    });
+
+    document.getElementById('profileRegBtn')?.addEventListener('click', () => {
+        const u = document.getElementById('profileRegUser').value.trim();
+        const p = document.getElementById('profileRegPass').value;
+        const c = document.getElementById('profileRegConfirm').value;
+        const err = document.getElementById('profileAuthError');
+        err.textContent = '';
+        if (!u || !p) { err.textContent = 'Please fill in all fields.'; return; }
+        if (p.length < 4) { err.textContent = 'Password must be 4+ characters.'; return; }
+        if (p !== c) { err.textContent = 'Passwords do not match.'; return; }
+        const accounts = getAccounts();
+        if (accounts[u]) { err.textContent = 'Username taken.'; return; }
+        accounts[u] = { password: p, role: Object.keys(accounts).length === 0 ? 'admin' : 'member', mii: { ...DEFAULT_MII }, created: Date.now() };
+        saveAccounts(accounts);
+        saveSession({ username: u, role: accounts[u].role, mii: accounts[u].mii });
+        currentMii = { ...DEFAULT_MII };
+        showEditor();
+        updateSidebarUser();
+        updateAdminUI();
+        renderSavedAccounts('profileSavedGridBottom', false);
+        showToast(`Account created! Welcome, ${u}!`, 'success');
+    });
+
+    document.getElementById('profileShowReg')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('profileLoginForm').style.display = 'none';
+        document.getElementById('profileRegForm').style.display = '';
+        document.getElementById('profileAuthError').textContent = '';
+    });
+
+    document.getElementById('profileShowLogin')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('profileRegForm').style.display = 'none';
+        document.getElementById('profileLoginForm').style.display = '';
+        document.getElementById('profileAuthError').textContent = '';
+    });
+
+    // === Editor Handlers ===
+    document.getElementById('profileTab')?.addEventListener('click', () => {}); // handled via delegation
+    document.getElementById('profileTabs')?.addEventListener('click', (e) => {
+        const tab = e.target.closest('.profile-tab');
+        if (tab) switchTab(tab.dataset.tab);
+    });
+
+    document.getElementById('profileRandomBtn')?.addEventListener('click', () => {
+        const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+        currentMii = {
+            face: pick(FACES), skin: pick(SKINS), hair: pick(HAIR_STYLES),
+            hairColor: pick(HAIR_COLORS), eyeShape: pick(EYE_SHAPES), eyeColor: pick(EYE_COLORS),
+            nose: pick(NOSE_SHAPES), mouth: pick(MOUTH_SHAPES), brows: pick(BROW_STYLES),
+            glasses: pick(GLASSES_SET), hat: pick(HAT_SET), shirtColor: pick(SHIRT_COLORS),
+            bodyType: pick(BODY_TYPES), bodyColor: pick(BODY_COLORS), accessory: pick(ACCESSORIES)
+        };
+        renderStage();
+        renderPanels();
+        showToast('Random Mii generated!', 'info');
+    });
+
+    document.getElementById('profileSaveBtn')?.addEventListener('click', () => {
+        const name = document.getElementById('profileNameInput')?.value.trim();
+        if (!name) { showToast('Enter a name.', 'error'); return; }
+        const accounts = getAccounts();
+        const isNew = !accounts[name];
+        const role = isNew ? (Object.keys(accounts).length === 0 ? 'admin' : 'member') : accounts[name].role;
+        accounts[name] = { password: accounts[name]?.password || 'mii', role, mii: { ...currentMii } };
+        saveAccounts(accounts);
+        saveSession({ username: name, role, mii: { ...currentMii } });
+        updateSidebarUser();
+        updateAdminUI();
+        renderSavedAccounts('profileSavedGrid', true);
+        renderSavedAccounts('profileSavedGridBottom', false);
+        showToast(isNew ? `Mii "${name}" created! (First account = Admin)` : `Mii "${name}" updated!`, 'success');
+    });
+
+    document.getElementById('profileSignOutBtn')?.addEventListener('click', () => {
+        clearSession();
+        showAuth();
+        updateSidebarUser();
+        showToast('Signed out.', 'info');
+    });
+
+    // === Sidebar Account Button ===
+    document.getElementById('btnAccount')?.addEventListener('click', () => {
+        switchView('viewMiiMaker');
+    });
+
+    // === Admin Game Edit (preserved from old system) ===
     const gdAdminEdit = document.getElementById('gdAdminEdit');
     if (gdAdminEdit) {
         gdAdminEdit.addEventListener('click', () => {
@@ -1506,204 +1858,16 @@ function initAccountSystem() {
     // Expose for other modules
     window._aeroAcct = { isAdmin, updateAdminUI, getSession };
 
+    // === Initial render ===
+    const session = getSession();
+    if (session) {
+        currentMii = { ...DEFAULT_MII, ...(session.mii || {}) };
+        showEditor();
+        renderSavedAccounts('profileSavedGridBottom', false);
+    } else {
+        showAuth();
+    }
     updateSidebarUser();
     updateAdminUI();
-}
-
-function initMiiMaker() {
-    const LS_KEY = 'aerocade_accounts';
-    const SESSION_KEY = 'aerocade_session';
-
-    const FACES = ['🙂','😊','😐','😑','😏','😌','😍','🥰','😎','🤓','😇','🥳','😈','👹','🤖','👽'];
-    const SKINS = ['#fce7f3','#fde68a','#fcd34d','#fbbf24','#f59e0b','#d4a574','#b08968','#92613e','#6b4423','#4a2c0f','#ffdbb4','#e8c4a0'];
-    const HAIRS = ['none','⬛','🟫','🟤','🟧','⬜','🟥','🧑‍🦱','👩‍🦰','🧑‍🦳','👴','👱'];
-    const HAIR_COLORS = ['#f3e8ff','#fce7f3','#1e293b','#78350f','#d97706','#ef4444','#8b5cf6','#ec4899','#059669','#f43f5e'];
-    const EYES_SET = ['●●','◉◉','••','⊙⊙','👀','👁','😎','googly'];
-    const NOSE_SET = ['•','△','▽','○','鼻','∘','¬'];
-    const MOUTH_SET = ['😀','😃','😄','😁','😆','😏','😐','😋','😛','🤗','😮','🥺'];
-    const BROW_SET = ['⌒⌒','▬▬','⌃⌃','---','∧∧','╭╭','▓▓'];
-    const FACIAL_HAIR = ['','🧔','👨','👨‍🦰','👨‍🦳','🧕','💀','🥸'];
-    const GLASSES_SET = ['','👓','🕶','🥽','🔍','🤓','😎','🥸'];
-    const HAT_SET = ['','🎩','🧢','👑','👒','🎓','⛑','🪖'];
-    const SHIRT_COLORS = ['#4a5568','#dc2626','#2563eb','#059669','#d97706','#7c3aed','#ec4899','#1e293b','#f97316','#06b6d4'];
-    const BODY_TYPES = ['normal','slim','wide','tall','short'];
-    const ACC_SET = ['','✨','🎵','⭐','💫','🔥','💜','🌟'];
-
-    const DEFAULT_MII = { face: '🙂', skin: '#fce7f3', hair: 'none', hairColor: '#f3e8ff', eyes: '●●', nose: '•', mouth: '😀', brows: '⌒⌒', facialHair: '', glasses: '', hat: '', shirtColor: '#4a5568', bodyType: 'normal', acc: '' };
-
-    let currentMii = { ...DEFAULT_MII };
-
-    const miiDisplay = document.getElementById('miiDisplay');
-    const miiHead = document.getElementById('miiHead');
-    const miiBody = document.getElementById('miiBody');
-
-    function buildRow(containerId, items, key, isColor) {
-        const row = document.getElementById(containerId);
-        if (!row) return;
-        row.innerHTML = '';
-        items.forEach(item => {
-            const btn = document.createElement('div');
-            btn.className = 'miimaker-opt' + (isColor ? ' color-opt' : '');
-            if (isColor) {
-                btn.style.background = item;
-                if (currentMii[key] === item) btn.classList.add('active');
-                btn.addEventListener('click', () => { currentMii[key] = item; renderMii(); buildRow(containerId, items, key, true); });
-            } else {
-                btn.textContent = item || '—';
-                if (currentMii[key] === item) btn.classList.add('active');
-                btn.addEventListener('click', () => { currentMii[key] = item; renderMii(); buildRow(containerId, items, key, false); });
-            }
-            row.appendChild(btn);
-        });
-    }
-
-    function getBodyTransform(type) {
-        switch(type) {
-            case 'slim': return { w: 90, h: 70, r: '25px 25px 0 0' };
-            case 'wide': return { w: 140, h: 70, r: '35px 35px 0 0' };
-            case 'tall': return { w: 110, h: 90, r: '25px 25px 0 0' };
-            case 'short': return { w: 110, h: 50, r: '20px 20px 0 0' };
-            default: return { w: 110, h: 70, r: '30px 30px 0 0' };
-        }
-    }
-
-    function renderMii() {
-        miiHead.style.background = currentMii.skin;
-        miiHead.innerHTML = `
-            <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:16px;z-index:3;">${currentMii.hat || ''}</div>
-            <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:14px;z-index:2;">${currentMii.hair === 'none' ? '' : currentMii.hair}</div>
-            <div style="font-size:12px;position:absolute;top:22px;left:50%;transform:translateX(-50%);z-index:3;">${currentMii.glasses || ''}</div>
-            <div style="font-size:28px;line-height:1;margin-top:8px;position:relative;z-index:1;">${currentMii.eyes}</div>
-            <div style="font-size:14px;position:relative;z-index:1;margin-top:-2px;">${currentMii.nose}</div>
-            <div style="font-size:22px;position:relative;z-index:1;">${currentMii.mouth}</div>
-            <div style="font-size:16px;position:relative;z-index:1;margin-top:-2px;">${currentMii.brows}</div>
-            <div style="font-size:14px;position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:1;">${currentMii.facialHair || ''}</div>
-            <div style="position:absolute;top:6px;right:-6px;font-size:14px;z-index:4;">${currentMii.acc}</div>`;
-
-        const bt = getBodyTransform(currentMii.bodyType);
-        miiBody.style.width = bt.w + 'px';
-        miiBody.style.height = bt.h + 'px';
-        miiBody.style.borderRadius = bt.r;
-        miiBody.style.background = currentMii.shirtColor;
-    }
-
-    function initControls() {
-        buildRow('miiFaceRow', FACES, 'face', false);
-        buildRow('miiSkinRow', SKINS, 'skin', true);
-        buildRow('miiHairRow', HAIRS, 'hair', false);
-        buildRow('miiHairColorRow', HAIR_COLORS, 'hairColor', true);
-        buildRow('miiEyesRow', EYES_SET, 'eyes', false);
-        buildRow('miiNoseRow', NOSE_SET, 'nose', false);
-        buildRow('miiMouthRow', MOUTH_SET, 'mouth', false);
-        buildRow('miiBrowRow', BROW_SET, 'brows', false);
-        buildRow('miiFacialHairRow', FACIAL_HAIR, 'facialHair', false);
-        buildRow('miiGlassesRow', GLASSES_SET, 'glasses', false);
-        buildRow('miiHatRow', HAT_SET, 'hat', false);
-        buildRow('miiShirtRow', SHIRT_COLORS, 'shirtColor', true);
-        buildRow('miiBodyRow', BODY_TYPES, 'bodyType', false);
-        buildRow('miiAccRow', ACC_SET, 'acc', false);
-    }
-
-    function renderSavedMiis() {
-        const list = document.getElementById('miiSavedList');
-        const session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
-        const accounts = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-        const names = Object.keys(accounts);
-        if (!names.length) { list.innerHTML = ''; return; }
-        let html = '<div class="miimaker-saved-title">Saved Accounts</div><div class="miimaker-saved-grid">';
-        names.forEach(name => {
-            const a = accounts[name];
-            const mii = a.mii || DEFAULT_MII;
-            const isActive = session?.username === name;
-            const roleLabel = a.role === 'admin' ? '★ Admin' : 'Member';
-            html += `<div class="miimaker-saved-card${isActive ? ' active' : ''}" data-user="${name}">
-                <div class="miimaker-saved-avatar" style="background:linear-gradient(135deg,${mii.skin},${mii.shirtColor || '#4a5568'})">${mii.face}</div>
-                <div class="miimaker-saved-name">${name}</div>
-                <div class="miimaker-saved-role">${roleLabel}</div>
-                <button class="miimaker-saved-delete" data-del="${name}">&times;</button>
-            </div>`;
-        });
-        html += '</div>';
-        list.innerHTML = html;
-
-        list.querySelectorAll('.miimaker-saved-card').forEach(card => {
-            card.addEventListener('click', (e) => {
-                if (e.target.closest('.miimaker-saved-delete')) return;
-                const name = card.dataset.user;
-                const a = accounts[name];
-                localStorage.setItem(SESSION_KEY, JSON.stringify({ username: name, role: a.role, mii: a.mii }));
-                currentMii = { ...DEFAULT_MII, ...(a.mii || {}) };
-                document.getElementById('miiNameInput').value = name;
-                renderMii();
-                initControls();
-                renderSavedMiis();
-                if (window._aeroAcct) window._aeroAcct.updateAdminUI();
-                updateSidebarUserDirect(name, a);
-                showToast(`Switched to ${name}`, 'success');
-            });
-        });
-
-        list.querySelectorAll('.miimaker-saved-delete').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const name = btn.dataset.del;
-                if (!confirm(`Delete account "${name}"?`)) return;
-                delete accounts[name];
-                localStorage.setItem(LS_KEY, JSON.stringify(accounts));
-                const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
-                if (s?.username === name) localStorage.removeItem(SESSION_KEY);
-                renderSavedMiis();
-                updateSidebarUserDirect();
-                showToast(`Account "${name}" deleted.`, 'info');
-            });
-        });
-    }
-
-    function updateSidebarUserDirect(name, account) {
-        const el = document.getElementById('sidebarUser');
-        if (!name || !account) { el.style.display = 'none'; return; }
-        el.style.display = 'flex';
-        const mii = account.mii || DEFAULT_MII;
-        document.getElementById('sidebarUserMii').innerHTML = mii.face;
-        document.getElementById('sidebarUserMii').style.background = `linear-gradient(135deg, ${mii.skin}, ${mii.shirtColor || '#4a5568'})`;
-        document.getElementById('sidebarUserName').textContent = name;
-        const roleEl = document.getElementById('sidebarUserRole');
-        roleEl.textContent = account.role === 'admin' ? '★ Admin' : 'Member';
-        roleEl.style.color = account.role === 'admin' ? '#818cf8' : '';
-    }
-
-    document.getElementById('miiSaveBtn')?.addEventListener('click', () => {
-        const name = document.getElementById('miiNameInput').value.trim();
-        if (!name) { showToast('Enter a Mii name.', 'error'); return; }
-        const accounts = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-        const isNew = !accounts[name];
-        const role = isNew ? (Object.keys(accounts).length === 0 ? 'admin' : 'member') : accounts[name].role;
-        accounts[name] = { password: accounts[name]?.password || 'mii', role, mii: { ...currentMii } };
-        localStorage.setItem(LS_KEY, JSON.stringify(accounts));
-        localStorage.setItem(SESSION_KEY, JSON.stringify({ username: name, role, mii: { ...currentMii } }));
-        renderSavedMiis();
-        updateSidebarUserDirect(name, accounts[name]);
-        if (window._aeroAcct) window._aeroAcct.updateAdminUI();
-        showToast(isNew ? `Mii "${name}" created! (First account = Admin)` : `Mii "${name}" updated!`, 'success');
-    });
-
-    document.getElementById('miiRandomBtn')?.addEventListener('click', () => {
-        const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-        currentMii = {
-            ...DEFAULT_MII,
-            face: pick(FACES), skin: pick(SKINS), hair: pick(HAIRS),
-            hairColor: pick(HAIR_COLORS), eyes: pick(EYES_SET), nose: pick(NOSE_SET),
-            mouth: pick(MOUTH_SET), brows: pick(BROW_SET), facialHair: pick(FACIAL_HAIR),
-            glasses: pick(GLASSES_SET), hat: pick(HAT_SET), shirtColor: pick(SHIRT_COLORS),
-            bodyType: pick(BODY_TYPES), acc: pick(ACC_SET)
-        };
-        renderMii();
-        initControls();
-        showToast('Random Mii generated!', 'info');
-    });
-
-    renderMii();
-    initControls();
-    renderSavedMiis();
 }
 })();

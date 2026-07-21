@@ -1,0 +1,204 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    overflow: hidden;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 3px;
+  }
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+  }
+}
+
+@layer components {
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 32px rgba(0, 120, 215, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  .dark .glass-panel {
+    background: rgba(20, 30, 50, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .aero-btn {
+    @apply px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200;
+    background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(240,245,255,0.9) 100%);
+    border: 1px solid rgba(0, 120, 215, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 120, 215, 0.1), inset 0 1px 0 rgba(255,255,255,0.8);
+    color: #1565c0;
+  }
+  .aero-btn:hover {
+    background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(220,235,255,1) 100%);
+    box-shadow: 0 4px 16px rgba(0, 120, 215, 0.2), inset 0 1px 0 rgba(255,255,255,0.9);
+    transform: translateY(-1px);
+  }
+  .aero-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0, 120, 215, 0.1), inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+  .aero-btn:disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .dark .aero-btn {
+    background: linear-gradient(180deg, rgba(40,55,80,0.9) 0%, rgba(30,40,60,0.9) 100%);
+    border: 1px solid rgba(100,160,255,0.15);
+    color: #64b5f6;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .dark .aero-btn:hover {
+    background: linear-gradient(180deg, rgba(50,70,100,0.95) 0%, rgba(40,55,80,0.95) 100%);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+
+  .aero-btn-primary {
+    @apply px-4 py-2 rounded-xl font-semibold text-sm text-white transition-all duration-200;
+    background: linear-gradient(180deg, #4da6ff 0%, #2196f3 100%);
+    border: 1px solid rgba(0, 100, 200, 0.3);
+    box-shadow: 0 4px 16px rgba(33, 150, 243, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  .aero-btn-primary:hover {
+    background: linear-gradient(180deg, #5bb3ff 0%, #42a5f5 100%);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+  }
+  .aero-btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .aero-btn-danger {
+    @apply px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200;
+    background: linear-gradient(180deg, #ff8a80 0%, #f44336 100%);
+    border: 1px solid rgba(200, 50, 50, 0.3);
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    color: white;
+  }
+  .aero-btn-danger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(244, 67, 54, 0.35);
+  }
+
+  .category-btn {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer w-full text-left;
+    color: #555;
+  }
+  .category-btn:hover {
+    background: rgba(77, 166, 255, 0.08);
+    color: #2196f3;
+  }
+  .category-btn.active {
+    background: linear-gradient(135deg, rgba(77, 166, 255, 0.12) 0%, rgba(33, 150, 243, 0.12) 100%);
+    color: #1565c0;
+    box-shadow: inset 0 0 0 1px rgba(33, 150, 243, 0.2);
+  }
+  .dark .category-btn {
+    color: #90a4ae;
+  }
+  .dark .category-btn:hover {
+    background: rgba(100, 181, 246, 0.1);
+    color: #64b5f6;
+  }
+  .dark .category-btn.active {
+    background: linear-gradient(135deg, rgba(100, 181, 246, 0.12) 0%, rgba(33, 150, 243, 0.12) 100%);
+    color: #64b5f6;
+    box-shadow: inset 0 0 0 1px rgba(100, 181, 246, 0.2);
+  }
+
+  .option-chip {
+    @apply px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer select-none;
+    background: rgba(240, 245, 255, 0.8);
+    border: 1px solid rgba(0, 120, 215, 0.1);
+    color: #555;
+  }
+  .option-chip:hover {
+    background: rgba(220, 235, 255, 1);
+    border-color: rgba(33, 150, 243, 0.3);
+  }
+  .option-chip.active {
+    background: linear-gradient(135deg, #4da6ff 0%, #2196f3 100%);
+    color: white;
+    border-color: rgba(0, 100, 200, 0.3);
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+  }
+  .dark .option-chip {
+    background: rgba(40, 55, 80, 0.6);
+    border-color: rgba(100, 160, 255, 0.1);
+    color: #90a4ae;
+  }
+  .dark .option-chip:hover {
+    background: rgba(50, 70, 100, 0.8);
+    border-color: rgba(100, 181, 246, 0.3);
+  }
+  .dark .option-chip.active {
+    background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
+    color: white;
+  }
+
+  .aero-slider {
+    @apply w-full h-1.5 rounded-full appearance-none outline-none;
+    background: linear-gradient(90deg, #e3f2fd, #bbdefb);
+  }
+  .aero-slider::-webkit-slider-thumb {
+    @apply appearance-none w-4 h-4 rounded-full cursor-pointer;
+    background: linear-gradient(180deg, #fff 0%, #e3f2fd 100%);
+    border: 2px solid #2196f3;
+    box-shadow: 0 2px 6px rgba(33, 150, 243, 0.3);
+  }
+  .dark .aero-slider {
+    background: linear-gradient(90deg, #1a2a40, #2a3a50);
+  }
+  .dark .aero-slider::-webkit-slider-thumb {
+    background: linear-gradient(180deg, #42a5f5 0%, #1e88e5 100%);
+    border-color: #64b5f6;
+  }
+
+  .color-swatch {
+    @apply w-7 h-7 rounded-full cursor-pointer transition-all duration-150;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  }
+  .color-swatch:hover {
+    transform: scale(1.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  .color-swatch.active {
+    border-color: #2196f3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.4), 0 2px 8px rgba(0, 0, 0, 0.15);
+    transform: scale(1.15);
+  }
+
+  .bg-bubble {
+    position: fixed;
+    border-radius: 50%;
+    opacity: 0.15;
+    pointer-events: none;
+  }
+
+  .dark .bg-bubble {
+    opacity: 0.06;
+  }
+}
