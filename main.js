@@ -1777,8 +1777,8 @@ function initProfile() {
 
     // === Account System (jsonbin.io admin sync + localStorage) ===
     const ADMIN_NAME = 'McTooter';
-    const JSONBIN_KEY = '';
-    const JSONBIN_ID = '';
+    const JSONBIN_KEY = '$2a$10$i3xGZbqAs5UpGSQXldRSXOB5Q60hXiHvvaqXyrC/UZ0WoR8KkbTiC';
+    const JSONBIN_ID = '6a5fa6a1da38895dfe7bec5a';
 
     async function jsonbinGet() {
         if (!JSONBIN_KEY || !JSONBIN_ID) return null;
