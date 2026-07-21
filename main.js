@@ -900,11 +900,15 @@
     };
 
     document.addEventListener('keydown', e => {
+        const tag = e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
         let m = KEY_MAP[e.code];
         if (m) { e.preventDefault(); keys[m] = 1; updateControllers(); }
         if (e.code === 'Space') { e.preventDefault(); $('#btnStartStop').click(); }
     });
     document.addEventListener('keyup', e => {
+        const tag = e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
         let m = KEY_MAP[e.code];
         if (m) { keys[m] = 0; updateControllers(); }
     });
