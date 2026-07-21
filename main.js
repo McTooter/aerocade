@@ -36,7 +36,7 @@
             'radial-gradient(circle at 30% 30%, rgba(236,72,153,0.12) 0%, rgba(236,72,153,0.02) 60%, transparent 100%)',
             'radial-gradient(circle at 30% 30%, rgba(6,182,212,0.15) 0%, rgba(6,182,212,0.03) 60%, transparent 100%)',
         ];
-        for (let i = 0; i < 15; i++) {
+        for (let i = 0; i < 8; i++) {
             const b = document.createElement('div');
             b.className = 'bubble';
             const size = 18 + Math.random() * 50;
@@ -54,7 +54,7 @@
     function createClouds() {
         const container = $('#cloudContainer');
         if (!container) return;
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 3; i++) {
             const cloud = document.createElement('div');
             cloud.className = 'cloud';
             const scale = 0.4 + Math.random() * 0.8;
@@ -85,7 +85,7 @@
             'rgba(251,191,36,0.08)',
             'rgba(244,114,182,0.08)',
         ];
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 5; i++) {
             const b = document.createElement('div');
             b.className = 'bokeh';
             const size = 30 + Math.random() * 80;
@@ -103,7 +103,7 @@
     function createLeaves() {
         const container = $('#leafContainer');
         if (!container) return;
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < 3; i++) {
             const leaf = document.createElement('div');
             leaf.className = 'leaf';
             const size = 10 + Math.random() * 14;
@@ -122,7 +122,7 @@
     function createLensFlares() {
         const container = $('#lensFlareContainer');
         if (!container) return;
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 2; i++) {
             const flare = document.createElement('div');
             flare.className = 'lens-flare';
             const size = 60 + Math.random() * 100;
@@ -140,7 +140,7 @@
     function createWaterDrops() {
         const container = $('#waterDropContainer');
         if (!container) return;
-        for (let i = 0; i < 12; i++) {
+        for (let i = 0; i < 5; i++) {
             const drop = document.createElement('div');
             drop.className = 'water-drop';
             drop.style.left = Math.random() * 100 + '%';
@@ -155,7 +155,7 @@
     function createLightRays() {
         const container = $('#lightRayContainer');
         if (!container) return;
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < 4; i++) {
             const ray = document.createElement('div');
             ray.className = 'light-ray';
             ray.style.left = (10 + Math.random() * 80) + '%';
@@ -181,7 +181,7 @@
             container.appendChild(ring);
             setTimeout(() => ring.remove(), 3000);
         }
-        setInterval(spawnRipple, 2500);
+        setInterval(spawnRipple, 5000);
         setTimeout(spawnRipple, 500);
         setTimeout(spawnRipple, 1200);
     }
@@ -189,14 +189,22 @@
     // ==================== MOUSE PARALLAX ====================
     function initParallax() {
         let ticking = false;
+        const targets = [
+            { el: $('#cloudContainer'), mx: 6.4, my: 4.8 },
+            { el: $('#bokehContainer'), mx: 4, my: 3.2 },
+            { el: $('#bubbleContainer'), mx: 2.4, my: 2.4 },
+            { el: $('#leafContainer'), mx: 4.8, my: 4 },
+            { el: $('#lensFlareContainer'), mx: 1.6, my: 1.6 },
+        ].filter(t => t.el);
         document.addEventListener('mousemove', e => {
             if (ticking) return;
             ticking = true;
             requestAnimationFrame(() => {
                 const cx = (e.clientX / window.innerWidth - 0.5) * 2;
                 const cy = (e.clientY / window.innerHeight - 0.5) * 2;
-                document.documentElement.style.setProperty('--parallax-x', (cx * 8) + 'px');
-                document.documentElement.style.setProperty('--parallax-y', (cy * 6) + 'px');
+                for (const t of targets) {
+                    t.el.style.translate = `${cx * t.mx}px ${cy * t.my}px`;
+                }
                 ticking = false;
             });
         });
@@ -209,10 +217,28 @@
         let mx = -100, my = -100;
         let curX = -100, curY = -100;
         let visible = false;
+        let idleTimer = null;
+        let curRaf = null;
 
         const style = document.createElement('style');
         style.textContent = `*, *::before, *::after { cursor: none !important; }`;
         document.head.appendChild(style);
+
+        function startLoop() {
+            if (curRaf) return;
+            function tick() {
+                curX += (mx - curX) * 0.25;
+                curY += (my - curY) * 0.25;
+                cursor.style.left = curX + 'px';
+                cursor.style.top = curY + 'px';
+                if (Math.abs(mx - curX) > 0.5 || Math.abs(my - curY) > 0.5) {
+                    curRaf = requestAnimationFrame(tick);
+                } else {
+                    curRaf = null;
+                }
+            }
+            curRaf = requestAnimationFrame(tick);
+        }
 
         document.addEventListener('mousemove', e => {
             mx = e.clientX; my = e.clientY;
@@ -221,21 +247,16 @@
                 cursor.style.opacity = '1';
                 cursor.style.transition = 'opacity 0.3s ease';
             }
+            startLoop();
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(() => { visible = false; cursor.style.opacity = '0'; }, 3000);
         });
 
         document.addEventListener('mouseleave', () => {
             visible = false;
             cursor.style.opacity = '0';
+            clearTimeout(idleTimer);
         });
-
-        function tick() {
-            curX += (mx - curX) * 0.25;
-            curY += (my - curY) * 0.25;
-            cursor.style.left = curX + 'px';
-            cursor.style.top = curY + 'px';
-            requestAnimationFrame(tick);
-        }
-        tick();
 
         document.addEventListener('mousedown', e => {
             cursor.style.transform = 'translate(-6px,-2px) scale(0.85)';
@@ -335,7 +356,7 @@
     function createSparkles() {
         const container = $('#sparkleContainer');
         if (!container) return;
-        for (let i = 0; i < 12; i++) {
+        for (let i = 0; i < 6; i++) {
             const s = document.createElement('div');
             s.className = 'sparkle';
             const size = 6 + Math.random() * 8;
@@ -353,7 +374,7 @@
     function createStars() {
         const container = $('#starContainer');
         if (!container) return;
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 8; i++) {
             const star = document.createElement('div');
             star.className = 'star';
             const size = 6 + Math.random() * 10;
@@ -369,7 +390,7 @@
     // ==================== PRISMATIC BANDS ====================
     function createPrismaticBands() {
         const body = document.body;
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 2; i++) {
             const band = document.createElement('div');
             band.className = 'prismatic-band';
             band.style.top = (15 + Math.random() * 60) + '%';
@@ -385,7 +406,7 @@
     function createGlowOrbs() {
         const body = document.body;
         const orbColors = ['rgba(134,239,172,0.3)', 'rgba(59,130,246,0.25)', 'rgba(168,85,247,0.2)', 'rgba(236,72,153,0.2)', 'rgba(6,182,212,0.25)'];
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 2; i++) {
             const orb = document.createElement('div');
             orb.className = 'glow-orb';
             const size = 100 + Math.random() * 200;
@@ -402,7 +423,7 @@
     // ==================== FLOATING PETALS ====================
     function createPetals() {
         const body = document.body;
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 3; i++) {
             const petal = document.createElement('div');
             petal.className = 'petal';
             const size = 8 + Math.random() * 10;
@@ -437,7 +458,7 @@
             ['rgba(16,185,129,0.45)', 'rgba(52,211,153,0.35)'],
             ['rgba(251,191,36,0.4)', 'rgba(252,211,77,0.3)'],
         ];
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 3; i++) {
             const b = document.createElement('div');
             b.className = 'butterfly';
             const size = 14 + Math.random() * 10;
@@ -460,7 +481,7 @@
         const container = $('#fishContainer');
         if (!container) return;
         const fishEmojis = ['\u{1F41F}', '\u{1F420}', '\u{1F421}', '\u{1F419}', '\u{1FAB8}'];
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 3; i++) {
             const fish = document.createElement('div');
             fish.className = 'fish';
             fish.textContent = fishEmojis[i % fishEmojis.length];
@@ -637,11 +658,7 @@
         let reader = new FileReader();
         reader.onload = e => {
             let romData = new Uint8Array(e.target.result);
-            if (consoleId === 'n64') {
-                launchEmulatorJS('n64', romData, file.name);
-            } else {
-                startEmulator(consoleId, romData, file.name);
-            }
+            startEmulator(consoleId, romData, file.name);
         };
         reader.readAsArrayBuffer(file);
     }
@@ -685,26 +702,37 @@
     function startEmulator(consoleId, romData, romName) {
         stopEmulator();
         activeConsole = consoleId;
-        let emu = createEmulator(consoleId);
-        if (!emu) { showToast('Console not available', 'error'); return; }
-        try { emu.loadROM(romData); } catch (err) { showToast('Load failed: ' + err.message, 'error'); return; }
 
-        activeEmulator = emu;
-        currentRomName = romName || 'Unknown';
-        let c = CONSOLES[consoleId];
-        canvas.width = c.width; canvas.height = c.height;
+        function initEmu() {
+            let emu = createEmulator(consoleId);
+            if (!emu) { showToast('Console not available', 'error'); return; }
+            try { emu.loadROM(romData); } catch (err) { showToast('Load failed: ' + err.message, 'error'); return; }
 
-        addToLibrary(currentRomName, consoleId);
-        $('#emuConsoleLabel').textContent = c.name;
-        $('#emuRomLabel').textContent = currentRomName;
-        showView('emulator');
+            activeEmulator = emu;
+            currentRomName = romName || 'Unknown';
+            let c = CONSOLES[consoleId];
+            canvas.width = c.width; canvas.height = c.height;
 
-        running = true; lastTime = performance.now(); fpsTime = lastTime; framesThisSec = 0;
-        $('#emuStatusDot').classList.add('on');
-        $('#emuStatusLabel').textContent = 'Running';
-        $('#btnStartStop').innerHTML = '&#9646;&#9646; Pause';
-        showToast('Loaded: ' + currentRomName, 'success');
-        renderLoop();
+            addToLibrary(currentRomName, consoleId);
+            $('#emuConsoleLabel').textContent = c.name;
+            $('#emuRomLabel').textContent = currentRomName;
+            showView('emulator');
+
+            running = true; lastTime = performance.now(); fpsTime = lastTime; framesThisSec = 0;
+            $('#emuStatusDot').classList.add('on');
+            $('#emuStatusLabel').textContent = 'Running';
+            $('#btnStartStop').innerHTML = '&#9646;&#9646; Pause';
+            showToast('Loaded: ' + currentRomName, 'success');
+            renderLoop();
+        }
+
+        if (consoleId === 'n64') {
+            launchEmulatorJS('n64', romData, romName);
+        } else if (window.loadEmuScript && window._emuLoadMap?.[consoleId]) {
+            window.loadEmuScript(consoleId).then(initEmu).catch(() => showToast('Failed to load emulator', 'error'));
+        } else {
+            initEmu();
+        }
     }
 
     function createEmulator(id) {

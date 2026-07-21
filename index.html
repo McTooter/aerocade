@@ -433,14 +433,26 @@
 <!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
 
-<script src="nes.js"></script>
-<script src="snes.js"></script>
-<script src="n64.js"></script>
-<script src="gb.js"></script>
-<script src="genesis.js"></script>
-<script src="ps1.js"></script>
-<script src="psp.js"></script>
 <script src="main.js"></script>
+<script>
+window._emuLoaded = {};
+window._emuLoadMap = {
+    nes: 'nes.js', snes: 'snes.js', n64: 'n64.js', gb: 'gb.js',
+    genesis: 'genesis.js', ps1: 'ps1.js', psp: 'psp.js'
+};
+window.loadEmuScript = function(id) {
+    if (window._emuLoaded[id]) return Promise.resolve();
+    const src = window._emuLoadMap[id];
+    if (!src) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = () => { window._emuLoaded[id] = true; resolve(); };
+        s.onerror = reject;
+        document.body.appendChild(s);
+    });
+};
+</script>
 <script>window.coi={shouldRegister:()=>true,coepCredentialless:()=>true,coepDegrade:()=>true,quiet:true};</script>
 <script src="coi-serviceworker.js"></script>
 </body>
