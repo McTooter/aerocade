@@ -1341,61 +1341,251 @@
 function initProfile() {
     const LS_KEY = 'aerocade_accounts';
     const SESSION_KEY = 'aerocade_session';
+    const MII_API = 'https://studio.mii.nintendo.com/miis/image.png';
 
-    const FACES = ['oval','round','long','angular','soft'];
-    const SKINS = ['#fce7f3','#ffe4cc','#fcd34d','#f59e0b','#d4a574','#b08968','#92613e','#6b4423','#4a2c0f'];
-    const HAIR_STYLES = ['none','short','medium','long','ponytail','bun','spiky','curly','mohawk','buzzcut'];
-    const HAIR_COLORS = ['#1a1a2e','#78350f','#d97706','#ef4444','#8b5cf6','#ec4899','#f3f4f6','#fcd34d'];
-    const EYE_SHAPES = ['normal','big','small','narrow','wide','sleepy','bright'];
-    const EYE_COLORS = ['#1e293b','#2563eb','#059669','#78350f','#8b5cf6','#f97316'];
-    const NOSE_SHAPES = ['small','medium','large','pointed','round','flat'];
-    const MOUTH_SHAPES = ['smile','neutral','open','smirk','grin','pout'];
-    const BROW_STYLES = ['normal','thick','thin','arched','flat','angry'];
-    const GLASSES_SET = ['none','round','square','aviator','cat-eye','half-rim'];
-    const HAT_SET = ['none','cap','beanie','tophat','headband','bow'];
-    const SHIRT_COLORS = ['#4a5568','#dc2626','#2563eb','#059669','#d97706','#7c3aed','#ec4899','#1e293b','#f97316','#06b6d4'];
-    const BODY_TYPES = ['normal','slim','wide','tall','short'];
-    const BODY_COLORS = ['#4a5568','#2563eb','#dc2626','#059669','#1e293b'];
-    const ACCESSORIES = ['none','earring','necklace','scarf','bowtie'];
+    // === Mii Studio Data Format (46 bytes) ===
+    // Byte layout from gen3_studio.ksy:
+    // [0]=facial_hair_color [1]=beard_goatee [2]=body_weight [3]=eye_stretch
+    // [4]=eye_color [5]=eye_rotation [6]=eye_size [7]=eye_type
+    // [8]=eye_horizontal [9]=eye_vertical [10]=eyebrow_stretch
+    // [11]=eyebrow_color [12]=eyebrow_rotation [13]=eyebrow_size
+    // [14]=eyebrow_type [15]=eyebrow_horizontal [16]=eyebrow_vertical
+    // [17]=face_color(skin) [18]=face_makeup [19]=face_type
+    // [20]=face_wrinkles [21]=favorite_color [22]=gender
+    // [23]=glasses_color [24]=glasses_size [25]=glasses_type
+    // [26]=glasses_vertical [27]=hair_color [28]=hair_flip
+    // [29]=hair_type [30]=body_height [31]=mole_size
+    // [32]=mole_enable [33]=mole_horizontal [34]=mole_vertical
+    // [35]=mouth_stretch [36]=mouth_color [37]=mouth_size
+    // [38]=mouth_type [39]=mouth_vertical [40]=beard_size
+    // [41]=beard_mustache [42]=beard_vertical [43]=nose_size
+    // [44]=nose_type [45]=nose_vertical
 
-    const DEFAULT_MII = {
-        face: 'oval', skin: '#fce7f3', hair: 'short', hairColor: '#1a1a2e',
-        eyeShape: 'normal', eyeColor: '#1e293b', nose: 'small', mouth: 'smile',
-        brows: 'normal', glasses: 'none', hat: 'none', shirtColor: '#4a5568',
-        bodyType: 'normal', bodyColor: '#4a5568', accessory: 'none'
+    // Pre-made Mii Studio codes (known good renders)
+    const PRESET_MIIS = {
+        'Matt': { code: '000f145b5f5e646e49546169687477858e878a87878e969d9c9fa6b3b9c0e5acafb6bbb6bcb6b9b8bebfc3cfd1d9da', label: 'Classic Mii' },
+        'Default': { code: '000b1259616c6f72707d7e848788939aa3b0bac1c8cfd2d9e0ebf2ff0209470e161d19141e19243a3e4148474a4751', label: 'Default Mii' },
+        'Jenni': { code: '000b1259616e717c6875868c8f909ba2aba8b4bbbfc6c9cfd6d9e0f1f900763d434a4c5f637679757f82898893a0b4', label: 'Female Mii' },
     };
 
-    let currentMii = { ...DEFAULT_MII };
+    const DEFAULT_STUDIO = PRESET_MIIS['Default'].code;
+
+    // Editor-friendly feature definitions with label arrays
+    const FACE_TYPES = ['Round','Long','Narrow','Wide','Square'];
+    const SKIN_COLORS = ['Light','Fair','Medium','Tan','Dark'];
+    const HAIR_STYLES = ['None','Short','Medium','Long','Ponytail','Bun','Spiky','Parted','Swept','Curly','Buzz','Flat Top'];
+    const HAIR_COLORS = ['Black','Dark Brown','Brown','Chestnut','Red','Blonde','Gray','White'];
+    const EYE_STYLES = ['Normal','Wide','Narrow','Sleepy','Bright','Gentle','Sharp','Round'];
+    const EYE_COLORS = ['Black','Dark Brown','Brown','Hazel','Blue','Green','Gray'];
+    const NOSE_STYLES = ['Small','Medium','Large','Pointed','Round','Flat'];
+    const MOUTH_STYLES = ['Smile','Grin','Neutral','Open','Smirk','Pout'];
+    const BROW_STYLES = ['Normal','Thick','Thin','Arched','Flat','Angry'];
+    const GLASSES_STYLES = ['None','Round','Square','Cat-Eye','Aviator'];
+    const FACIAL_HAIR_STYLES = ['None','Goatee','Mustache','Full'];
+    const FAV_COLORS = ['Red','Orange','Yellow','Green','Blue','Light Blue','Pink','Purple','Brown','White','Black'];
+
+    // Map UI selections to approximate Mii Studio byte values
+    const FACE_MAP = [0,3,5,8,1];
+    const SKIN_MAP = [3,2,5,7,9];
+    const HAIR_MAP = [0,73,74,111,75,76,32,77,78,31,50,13];
+    const HAIR_COL_MAP = [0x04,0x05,0x02,0x03,0x06,0x08,0x01,0x09];
+    const EYE_MAP = [27,30,34,36,28,29,31,33];
+    const EYE_COL_MAP = [0x01,0x02,0x04,0x06,0x03,0x05,0x07];
+    const NOSE_MAP = [10,11,13,14,12,15];
+    const MOUTH_MAP = [23,24,22,25,26,27];
+    const BROW_MAP = [0,2,1,3,4,5];
+    const GLASSES_MAP = [0,1,2,4,3];
+    const FH_MAP = [0,3,2,1];
+    const FAV_MAP = [0,1,2,3,4,5,6,7,8,9,10,11];
+
+    let currentStudioData = null; // Uint8Array of 46 bytes
     let activeTab = 'face';
 
     const TAB_ITEMS = {
         face: [
-            { label: 'Face Shape', key: 'face', items: FACES },
-            { label: 'Skin', key: 'skin', items: SKINS, color: true }
+            { label: 'Face Shape', key: 'faceType', items: FACE_TYPES },
+            { label: 'Skin', key: 'skinColor', items: SKIN_COLORS }
         ],
         hair: [
-            { label: 'Style', key: 'hair', items: HAIR_STYLES },
-            { label: 'Color', key: 'hairColor', items: HAIR_COLORS, color: true }
+            { label: 'Style', key: 'hairStyle', items: HAIR_STYLES },
+            { label: 'Color', key: 'hairColor', items: HAIR_COLORS }
         ],
         eyes: [
-            { label: 'Shape', key: 'eyeShape', items: EYE_SHAPES },
-            { label: 'Color', key: 'eyeColor', items: EYE_COLORS, color: true }
+            { label: 'Shape', key: 'eyeStyle', items: EYE_STYLES },
+            { label: 'Color', key: 'eyeColor', items: EYE_COLORS }
         ],
         features: [
-            { label: 'Nose', key: 'nose', items: NOSE_SHAPES },
-            { label: 'Mouth', key: 'mouth', items: MOUTH_SHAPES },
-            { label: 'Brows', key: 'brows', items: BROW_STYLES },
-            { label: 'Glasses', key: 'glasses', items: GLASSES_SET }
+            { label: 'Nose', key: 'noseStyle', items: NOSE_STYLES },
+            { label: 'Mouth', key: 'mouthStyle', items: MOUTH_STYLES },
+            { label: 'Brows', key: 'browStyle', items: BROW_STYLES },
+            { label: 'Glasses', key: 'glassesStyle', items: GLASSES_STYLES }
         ],
         style: [
-            { label: 'Hat', key: 'hat', items: HAT_SET },
-            { label: 'Shirt', key: 'shirtColor', items: SHIRT_COLORS, color: true },
-            { label: 'Body Type', key: 'bodyType', items: BODY_TYPES },
-            { label: 'Body Color', key: 'bodyColor', items: BODY_COLORS, color: true },
-            { label: 'Accessory', key: 'accessory', items: ACCESSORIES }
+            { label: 'Facial Hair', key: 'facialHair', items: FACIAL_HAIR_STYLES },
+            { label: 'Favorite Color', key: 'favColor', items: FAV_COLORS }
         ]
     };
 
+    // Current editor state (indexes into the option arrays)
+    let editorState = {
+        faceType: 0, skinColor: 0, hairStyle: 1, hairColor: 0,
+        eyeStyle: 0, eyeColor: 0, noseStyle: 0, mouthStyle: 0,
+        browStyle: 0, glassesStyle: 0, facialHair: 0, favColor: 4,
+        gender: 0, height: 64, weight: 64
+    };
+
+    // === Mii Studio Encoding ===
+    function buildStudioData() {
+        const d = new Uint8Array(46);
+        d[0] = HAIR_COL_MAP[editorState.hairColor] || 0x04; // facial_hair_color (matches hair)
+        d[1] = editorState.facialHair > 0 ? (editorState.facialHair === 1 ? 3 : editorState.facialHair === 2 ? 1 : 2) : 0; // beard_goatee
+        d[2] = editorState.weight; // body_weight
+        d[3] = 3; // eye_stretch (default)
+        d[4] = EYE_COL_MAP[editorState.eyeColor] || 0x01; // eye_color
+        d[5] = 4; // eye_rotation
+        d[6] = 4; // eye_size
+        d[7] = EYE_MAP[editorState.eyeStyle] || 27; // eye_type
+        d[8] = 6; // eye_horizontal (center)
+        d[9] = 10; // eye_vertical
+        d[10] = 3; // eyebrow_stretch
+        d[11] = HAIR_COL_MAP[editorState.hairColor] || 0x04; // eyebrow_color
+        d[12] = 6; // eyebrow_rotation
+        d[13] = 4; // eyebrow_size
+        d[14] = BROW_MAP[editorState.browStyle] || 0; // eyebrow_type
+        d[15] = 6; // eyebrow_horizontal
+        d[16] = 10; // eyebrow_vertical
+        d[17] = SKIN_MAP[editorState.skinColor] || 3; // face_color
+        d[18] = 0; // face_makeup
+        d[19] = FACE_MAP[editorState.faceType] || 0; // face_type
+        d[20] = 0; // face_wrinkles
+        d[21] = FAV_MAP[editorState.favColor] || 4; // favorite_color
+        d[22] = editorState.gender; // gender
+        d[23] = 0; // glasses_color
+        d[24] = 4; // glasses_size
+        d[25] = GLASSES_MAP[editorState.glassesStyle] || 0; // glasses_type
+        d[26] = 10; // glasses_vertical
+        d[27] = HAIR_COL_MAP[editorState.hairColor] || 0x04; // hair_color
+        d[28] = 0; // hair_flip
+        d[29] = HAIR_MAP[editorState.hairStyle] || 73; // hair_type
+        d[30] = editorState.height; // body_height
+        d[31] = 1; // mole_size
+        d[32] = 0; // mole_enable
+        d[33] = 15; // mole_horizontal
+        d[34] = 20; // mole_vertical
+        d[35] = 3; // mouth_stretch
+        d[36] = 0x0c; // mouth_color
+        d[37] = 4; // mouth_size
+        d[38] = MOUTH_MAP[editorState.mouthStyle] || 23; // mouth_type
+        d[39] = 13; // mouth_vertical
+        d[40] = 4; // beard_size
+        d[41] = editorState.facialHair === 2 ? 3 : (editorState.facialHair === 3 ? 1 : 0); // beard_mustache
+        d[42] = 8; // beard_vertical
+        d[43] = 4; // nose_size
+        d[44] = NOSE_MAP[editorState.noseStyle] || 10; // nose_type
+        d[45] = 13; // nose_vertical
+        return d;
+    }
+
+    function obfuscateStudioUrl(src) {
+        const dst = new Uint8Array(47);
+        dst[0] = 0;
+        for (let i = 0; i < 46; i++) {
+            dst[i + 1] = (7 + (src[i] ^ dst[i])) & 0xff;
+        }
+        return dst;
+    }
+
+    function studioDataToHex(data) {
+        const obf = obfuscateStudioUrl(data);
+        let hex = '';
+        for (let i = 0; i < 47; i++) hex += obf[i].toString(16).padStart(2, '0');
+        return hex;
+    }
+
+    const VALID_WIDTHS = [96, 128, 270, 512];
+    function studioHexToUrl(hex, width, type) {
+        width = width || 512; type = type || 'face';
+        if (!VALID_WIDTHS.includes(width)) {
+            width = VALID_WIDTHS.reduce((prev, curr) => Math.abs(curr - width) < Math.abs(prev - width) ? curr : prev);
+        }
+        return `${MII_API}?data=${hex}&width=${width}&type=${type}`;
+    }
+
+    function buildMiiUrl(width, type) {
+        if (!currentStudioData) currentStudioData = buildStudioData();
+        return studioHexToUrl(studioDataToHex(currentStudioData), width, type);
+    }
+
+    function parseStudioCode(code) {
+        if (!code || code.length !== 94) return null;
+        const obf = new Uint8Array(47);
+        for (let i = 0; i < 47; i++) obf[i] = parseInt(code.substr(i * 2, 2), 16);
+        const bytes = new Uint8Array(46);
+        for (let i = 0; i < 46; i++) {
+            bytes[i] = ((obf[i + 1] - 7) ^ obf[i]) & 0xff;
+        }
+        return bytes;
+    }
+
+    function editorStateFromStudioData(data) {
+        // Reverse-map from studio bytes to editor indexes
+        const state = { ...editorState };
+        // Find closest match for key values
+        const findClosest = (arr, val) => {
+            let best = 0, bestDist = 999;
+            arr.forEach((v, i) => { const d = Math.abs(v - val); if (d < bestDist) { bestDist = d; best = i; } });
+            return best;
+        };
+        state.hairColor = findClosest(HAIR_COL_MAP, data[27]);
+        state.eyeColor = findClosest(EYE_COL_MAP, data[4]);
+        state.faceType = findClosest(FACE_MAP, data[19]);
+        state.skinColor = findClosest(SKIN_MAP, data[17]);
+        state.hairStyle = findClosest(HAIR_MAP, data[29]);
+        state.eyeStyle = findClosest(EYE_MAP, data[7]);
+        state.noseStyle = findClosest(NOSE_MAP, data[44]);
+        state.mouthStyle = findClosest(MOUTH_MAP, data[38]);
+        state.browStyle = findClosest(BROW_MAP, data[14]);
+        state.glassesStyle = findClosest(GLASSES_MAP, data[25]);
+        state.favColor = findClosest(FAV_MAP, data[21]);
+        state.gender = data[22];
+        state.height = data[30];
+        state.weight = data[2];
+        return state;
+    }
+
+    // === Mii Image Rendering ===
+    function renderMiiImg(miiHex, size) {
+        size = size || 512;
+        const url = studioHexToUrl(miiHex, size);
+        return `<img src="${url}" alt="Mii" style="width:100%;height:100%;object-fit:contain;" onerror="this.src='${studioHexToUrl(DEFAULT_STUDIO, size)}'">`;
+    }
+
+    function randomizeMii() {
+        const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+        editorState = {
+            faceType: Math.floor(Math.random() * FACE_TYPES.length),
+            skinColor: Math.floor(Math.random() * SKIN_COLORS.length),
+            hairStyle: 1 + Math.floor(Math.random() * (HAIR_STYLES.length - 1)),
+            hairColor: Math.floor(Math.random() * HAIR_COLORS.length),
+            eyeStyle: Math.floor(Math.random() * EYE_STYLES.length),
+            eyeColor: Math.floor(Math.random() * EYE_COLORS.length),
+            noseStyle: Math.floor(Math.random() * NOSE_STYLES.length),
+            mouthStyle: Math.floor(Math.random() * MOUTH_STYLES.length),
+            browStyle: Math.floor(Math.random() * BROW_STYLES.length),
+            glassesStyle: Math.random() > 0.8 ? Math.floor(Math.random() * (GLASSES_STYLES.length - 1)) + 1 : 0,
+            facialHair: Math.random() > 0.85 ? Math.floor(Math.random() * (FACIAL_HAIR_STYLES.length - 1)) + 1 : 0,
+            favColor: Math.floor(Math.random() * FAV_COLORS.length),
+            gender: Math.random() > 0.5 ? 1 : 0,
+            height: 48 + Math.floor(Math.random() * 40),
+            weight: 40 + Math.floor(Math.random() * 50)
+        };
+        currentStudioData = buildStudioData();
+        renderStage();
+        renderPanels();
+        showToast('Random Mii generated!', 'info');
+    }
+
+    // === Auth/Account System ===
     function getAccounts() { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }
     function saveAccounts(a) { localStorage.setItem(LS_KEY, JSON.stringify(a)); }
     function getSession() { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
@@ -1411,7 +1601,8 @@ function initProfile() {
         const roleEl = document.getElementById('sidebarUserRole');
         if (!s) { el.style.display = 'none'; return; }
         el.style.display = 'flex';
-        miiEl.innerHTML = renderMiiSvg(s.mii || DEFAULT_MII, 36, 42);
+        const miiHex = s.miiStudio || DEFAULT_STUDIO;
+        miiEl.innerHTML = renderMiiImg(miiHex, 96);
         miiEl.style.background = 'linear-gradient(180deg, #e3f2fd, #90caf9)';
         nameEl.textContent = s.username;
         roleEl.textContent = s.role === 'admin' ? '★ Admin' : 'Member';
@@ -1423,273 +1614,13 @@ function initProfile() {
         if (editBtn) editBtn.style.display = isAdmin() ? 'block' : 'none';
     }
 
-    // === SVG Mii Renderer (Wii-style 3D) ===
-    let _miiUid = 0;
-    function renderMiiSvg(mii, w, h) {
-        w = w || 180; h = h || 220;
-        const m = { ...DEFAULT_MII, ...mii };
-        const uid = 'm' + (++_miiUid);
-        const skin = m.skin;
-        const shirt = m.shirtColor || m.bodyColor || '#4a5568';
-        const hairC = m.hairColor;
-        const browC = darken(hairC, 8);
-
-        // Mii proportions: head is huge, body is small rounded blob
-        const headCX = w / 2;
-        const headCY = h * 0.34;
-        const headRX = w * 0.28;
-        const headRY = headRX * 1.05;
-        const bodyW = w * 0.42;
-        const bodyH = h * 0.28;
-        const bodyX = headCX - bodyW / 2;
-        const bodyY = h - bodyH - h * 0.03;
-
-        // Neck area (skin color bridge between head and body)
-        const neckTop = headCY + headRY - 6;
-        const neckBot = bodyY + 4;
-
-        let svg = `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
-        svg += `<defs>`;
-        // 3D head gradient - sphere-like shading
-        svg += `<radialGradient id="${uid}sk" cx="38%" cy="32%" r="65%" fx="35%" fy="28%">`;
-        svg += `<stop offset="0%" stop-color="${lighten(skin, 30)}"/>`;
-        svg += `<stop offset="45%" stop-color="${lighten(skin, 10)}"/>`;
-        svg += `<stop offset="100%" stop-color="${darken(skin, 8)}"/>`;
-        svg += `</radialGradient>`;
-        // 3D body gradient
-        svg += `<linearGradient id="${uid}bd" x1="0" y1="0" x2="0" y2="1">`;
-        svg += `<stop offset="0%" stop-color="${lighten(shirt, 12)}"/>`;
-        svg += `<stop offset="60%" stop-color="${shirt}"/>`;
-        svg += `<stop offset="100%" stop-color="${darken(shirt, 15)}"/>`;
-        svg += `</linearGradient>`;
-        // Hair highlight
-        svg += `<linearGradient id="${uid}hr" x1="0.3" y1="0" x2="0.7" y2="1">`;
-        svg += `<stop offset="0%" stop-color="${lighten(hairC, 18)}"/>`;
-        svg += `<stop offset="100%" stop-color="${hairC}"/>`;
-        svg += `</linearGradient>`;
-        // Drop shadow filter
-        svg += `<filter id="${uid}ds" x="-20%" y="-10%" width="140%" height="140%">`;
-        svg += `<feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.18)"/>`;
-        svg += `</filter>`;
-        // Head inner shadow for 3D rim
-        svg += `<radialGradient id="${uid}hs" cx="50%" cy="50%" r="50%">`;
-        svg += `<stop offset="82%" stop-color="transparent"/>`;
-        svg += `<stop offset="100%" stop-color="${darken(skin, 18)}" stop-opacity="0.25"/>`;
-        svg += `</radialGradient>`;
-        svg += `</defs>`;
-
-        // === BODY (rounded trapezoid, 3D shaded) ===
-        svg += `<path d="M${bodyX + bodyW * 0.15},${bodyY}`;
-        svg += ` Q${bodyX},${bodyY + 8} ${bodyX + 2},${bodyY + bodyH * 0.7}`;
-        svg += ` L${bodyX + 4},${bodyY + bodyH}`;
-        svg += ` L${bodyX + bodyW - 4},${bodyY + bodyH}`;
-        svg += ` L${bodyX + bodyW - 2},${bodyY + bodyH * 0.7}`;
-        svg += ` Q${bodyX + bodyW},${bodyY + 8} ${bodyX + bodyW * 0.85},${bodyY}`;
-        svg += ` Z" fill="url(#${uid}bd)" stroke="${darken(shirt, 20)}" stroke-width="0.8"/>`;
-        // Shirt collar detail
-        svg += `<path d="M${headCX - 6},${bodyY + 3} L${headCX},${bodyY + 10} L${headCX + 6},${bodyY + 3}" fill="none" stroke="${darken(shirt, 25)}" stroke-width="0.8" opacity="0.5"/>`;
-
-        // === NECK (skin bridge) ===
-        svg += `<ellipse cx="${headCX}" cy="${(neckTop + neckBot) / 2}" rx="12" ry="${(neckBot - neckTop) / 2 + 2}" fill="${darken(skin, 5)}"/>`;
-
-        // === HEAD (3D sphere) ===
-        // Head shadow on body
-        svg += `<ellipse cx="${headCX}" cy="${neckTop + 4}" rx="${headRX * 0.8}" ry="6" fill="rgba(0,0,0,0.08)"/>`;
-        // Main head sphere
-        svg += `<ellipse cx="${headCX}" cy="${headCY}" rx="${headRX}" ry="${headRY}" fill="url(#${uid}sk)" filter="url(#${uid}ds)"/>`;
-        // 3D rim shading overlay
-        svg += `<ellipse cx="${headCX}" cy="${headCY}" rx="${headRX}" ry="${headRY}" fill="url(#${uid}hs)"/>`;
-        // Specular highlight (shiny spot)
-        svg += `<ellipse cx="${headCX - headRX * 0.18}" cy="${headCY - headRY * 0.28}" rx="${headRX * 0.22}" ry="${headRY * 0.15}" fill="white" opacity="0.28"/>`;
-        // Subtle cheek blush
-        svg += `<ellipse cx="${headCX - headRX * 0.55}" cy="${headCY + headRY * 0.25}" rx="8" ry="5" fill="#ffb3b3" opacity="0.2"/>`;
-        svg += `<ellipse cx="${headCX + headRX * 0.55}" cy="${headCY + headRY * 0.25}" rx="8" ry="5" fill="#ffb3b3" opacity="0.2"/>`;
-
-        // === HAIR (bold geometric Mii-style shapes) ===
-        const hairW = headRX + 4;
-        const hairTop = headCY - headRY;
-        const hcx = headCX;
-        const hairDefs = {
-            none: '',
-            short: `<path d="M${hcx - hairW},${headCY - headRY * 0.35} Q${hcx - hairW - 3},${hairTop - 10} ${hcx},${hairTop - 14} Q${hcx + hairW + 3},${hairTop - 10} ${hcx + hairW},${headCY - headRY * 0.35}" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/>`,
-            medium: `<path d="M${hcx - hairW - 2},${headCY - headRY * 0.1} Q${hcx - hairW - 4},${hairTop - 14} ${hcx},${hairTop - 16} Q${hcx + hairW + 4},${hairTop - 14} ${hcx + hairW + 2},${headCY - headRY * 0.1} L${hcx + hairW - 5},${headCY + 6} Q${hcx + 20},${headCY - 2} ${hcx},${headCY - 4} Q${hcx - 20},${headCY - 2} ${hcx - hairW + 5},${headCY + 6} Z" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/>`,
-            long: `<path d="M${hcx - hairW - 3},${headCY - headRY * 0.1} Q${hcx - hairW - 5},${hairTop - 14} ${hcx},${hairTop - 18} Q${hcx + hairW + 5},${hairTop - 14} ${hcx + hairW + 3},${headCY - headRY * 0.1} L${hcx + hairW + 5},${headCY + headRY * 0.8} Q${hcx + 30},${headCY + headRY * 0.4} ${hcx},${headCY + headRY * 0.35} Q${hcx - 30},${headCY + headRY * 0.4} ${hcx - hairW - 5},${headCY + headRY * 0.8} Z" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/>`,
-            ponytail: `<path d="M${hcx - hairW},${headCY - headRY * 0.35} Q${hcx - hairW - 3},${hairTop - 10} ${hcx},${hairTop - 14} Q${hcx + hairW + 3},${hairTop - 10} ${hcx + hairW},${headCY - headRY * 0.35}" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/><path d="M${hcx + hairW - 8},${hairTop + 4} Q${hcx + hairW + 18},${hairTop + 10} ${hcx + hairW + 15},${headCY + headRY * 0.6} Q${hcx + hairW + 10},${headCY + headRY * 0.8} ${hcx + hairW},${headCY + headRY * 0.55}" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/>`,
-            bun: `<path d="M${hcx - hairW},${headCY - headRY * 0.35} Q${hcx - hairW - 3},${hairTop - 10} ${hcx},${hairTop - 14} Q${hcx + hairW + 3},${hairTop - 10} ${hcx + hairW},${headCY - headRY * 0.35}" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/><circle cx="${hcx}" cy="${hairTop - 12}" r="12" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/>`,
-            spiky: `<path d="M${hcx - hairW - 2},${headCY - headRY * 0.2} L${hcx - hairW + 5},${hairTop - 18} L${hcx - 22},${headCY - headRY * 0.5} L${hcx - 10},${hairTop - 28} L${hcx},${headCY - headRY * 0.45} L${hcx + 10},${hairTop - 28} L${hcx + 22},${headCY - headRY * 0.5} L${hcx + hairW - 5},${hairTop - 18} L${hcx + hairW + 2},${headCY - headRY * 0.2}" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/>`,
-            curly: `<path d="M${hcx - hairW - 4},${headCY - headRY * 0.05} Q${hcx - hairW - 6},${hairTop - 12} ${hcx},${hairTop - 16} Q${hcx + hairW + 6},${hairTop - 12} ${hcx + hairW + 4},${headCY - headRY * 0.05}" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/><circle cx="${hcx - hairW + 8}" cy="${hairTop + 8}" r="10" fill="url(#${uid}hr)"/><circle cx="${hcx + hairW - 8}" cy="${hairTop + 8}" r="10" fill="url(#${uid}hr)"/><circle cx="${hcx - 18}" cy="${hairTop - 4}" r="11" fill="url(#${uid}hr)"/><circle cx="${hcx + 18}" cy="${hairTop - 4}" r="11" fill="url(#${uid}hr)"/><circle cx="${hcx}" cy="${hairTop - 12}" r="11" fill="url(#${uid}hr)"/>`,
-            mohawk: `<path d="M${hcx - 7},${headCY - headRY * 0.3} Q${hcx - 9},${hairTop - 28} ${hcx},${hairTop - 35} Q${hcx + 9},${hairTop - 28} ${hcx + 7},${headCY - headRY * 0.3}" fill="url(#${uid}hr)" stroke="${darken(hairC, 15)}" stroke-width="0.5"/>`,
-            buzzcut: `<path d="M${hcx - hairW + 2},${headCY - headRY * 0.38} Q${hcx - hairW - 1},${hairTop - 6} ${hcx},${hairTop - 8} Q${hcx + hairW + 1},${hairTop - 6} ${hcx + hairW - 2},${headCY - headRY * 0.38}" fill="url(#${uid}hr)" opacity="0.65" stroke="${darken(hairC, 15)}" stroke-width="0.3"/>`
-        };
-        svg += hairDefs[m.hair] || '';
-
-        // === EYEBROWS (thick Mii-style arcs) ===
-        const browGap = headRX * 0.42;
-        const browY2 = headCY - headRY * 0.02;
-        const browW2 = headRX * 0.32;
-        const browDefs = {
-            normal: `<path d="M${hcx - browGap - browW2},${browY2} Q${hcx - browGap},${browY2 - 6} ${hcx - browGap + browW2},${browY2}" fill="none" stroke="${browC}" stroke-width="2.5" stroke-linecap="round"/><path d="M${hcx + browGap - browW2},${browY2} Q${hcx + browGap},${browY2 - 6} ${hcx + browGap + browW2},${browY2}" fill="none" stroke="${browC}" stroke-width="2.5" stroke-linecap="round"/>`,
-            thick: `<path d="M${hcx - browGap - browW2 - 1},${browY2 + 1} Q${hcx - browGap},${browY2 - 7} ${hcx - browGap + browW2 + 1},${browY2 + 1}" fill="${browC}"/><path d="M${hcx + browGap - browW2 - 1},${browY2 + 1} Q${hcx + browGap},${browY2 - 7} ${hcx + browGap + browW2 + 1},${browY2 + 1}" fill="${browC}"/>`,
-            thin: `<path d="M${hcx - browGap - browW2},${browY2} Q${hcx - browGap},${browY2 - 5} ${hcx - browGap + browW2},${browY2}" fill="none" stroke="${browC}" stroke-width="1.2" stroke-linecap="round"/><path d="M${hcx + browGap - browW2},${browY2} Q${hcx + browGap},${browY2 - 5} ${hcx + browGap + browW2},${browY2}" fill="none" stroke="${browC}" stroke-width="1.2" stroke-linecap="round"/>`,
-            arched: `<path d="M${hcx - browGap - browW2 - 1},${browY2 + 2} Q${hcx - browGap},${browY2 - 10} ${hcx - browGap + browW2 + 1},${browY2 + 2}" fill="none" stroke="${browC}" stroke-width="2" stroke-linecap="round"/><path d="M${hcx + browGap - browW2 - 1},${browY2 + 2} Q${hcx + browGap},${browY2 - 10} ${hcx + browGap + browW2 + 1},${browY2 + 2}" fill="none" stroke="${browC}" stroke-width="2" stroke-linecap="round"/>`,
-            flat: `<line x1="${hcx - browGap - browW2}" y1="${browY2}" x2="${hcx - browGap + browW2}" y2="${browY2}" stroke="${browC}" stroke-width="3" stroke-linecap="round"/><line x1="${hcx + browGap - browW2}" y1="${browY2}" x2="${hcx + browGap + browW2}" y2="${browY2}" stroke="${browC}" stroke-width="3" stroke-linecap="round"/>`,
-            angry: `<path d="M${hcx - browGap - browW2},${browY2 + 5} L${hcx - browGap + browW2},${browY2 - 3}" stroke="${browC}" stroke-width="2.5" stroke-linecap="round"/><path d="M${hcx + browGap - browW2},${browY2 - 3} L${hcx + browGap + browW2},${browY2 + 5}" stroke="${browC}" stroke-width="2.5" stroke-linecap="round"/>`
-        };
-        svg += browDefs[m.brows] || browDefs.normal;
-
-        // === EYES (Mii-style: white oval + dark oval iris + specular dot) ===
-        const eyeGap = headRX * 0.34;
-        const eyeY2 = headCY + headRY * 0.08;
-        const eyeDefs = {
-            normal: (ex, ey) => {
-                const ew = 7, eh = 8;
-                return `<ellipse cx="${ex}" cy="${ey}" rx="${ew}" ry="${eh}" fill="white" stroke="#2d2d2d" stroke-width="0.8"/>` +
-                    `<ellipse cx="${ex + 0.5}" cy="${ey + 1}" rx="${ew * 0.55}" ry="${eh * 0.6}" fill="${m.eyeColor}"/>` +
-                    `<ellipse cx="${ex + 0.5}" cy="${ey + 1}" rx="${ew * 0.35}" ry="${eh * 0.38}" fill="black"/>` +
-                    `<circle cx="${ex + 2}" cy="${ey - 2}" r="2.2" fill="white" opacity="0.9"/>`;
-            },
-            big: (ex, ey) => {
-                const ew = 9, eh = 10.5;
-                return `<ellipse cx="${ex}" cy="${ey}" rx="${ew}" ry="${eh}" fill="white" stroke="#2d2d2d" stroke-width="0.8"/>` +
-                    `<ellipse cx="${ex + 0.5}" cy="${ey + 1}" rx="${ew * 0.55}" ry="${eh * 0.58}" fill="${m.eyeColor}"/>` +
-                    `<ellipse cx="${ex + 0.5}" cy="${ey + 1}" rx="${ew * 0.33}" ry="${eh * 0.36}" fill="black"/>` +
-                    `<circle cx="${ex + 2.5}" cy="${ey - 2.5}" r="3" fill="white" opacity="0.9"/>`;
-            },
-            small: (ex, ey) => {
-                const ew = 5, eh = 5.5;
-                return `<ellipse cx="${ex}" cy="${ey}" rx="${ew}" ry="${eh}" fill="white" stroke="#2d2d2d" stroke-width="0.8"/>` +
-                    `<ellipse cx="${ex + 0.3}" cy="${ey + 0.5}" rx="${ew * 0.55}" ry="${eh * 0.6}" fill="${m.eyeColor}"/>` +
-                    `<ellipse cx="${ex + 0.3}" cy="${ey + 0.5}" rx="${ew * 0.32}" ry="${eh * 0.36}" fill="black"/>` +
-                    `<circle cx="${ex + 1.5}" cy="${ey - 1}" r="1.5" fill="white" opacity="0.9"/>`;
-            },
-            narrow: (ex, ey) => {
-                const ew = 8, eh = 4.5;
-                return `<ellipse cx="${ex}" cy="${ey}" rx="${ew}" ry="${eh}" fill="white" stroke="#2d2d2d" stroke-width="0.8"/>` +
-                    `<ellipse cx="${ex + 0.5}" cy="${ey}" rx="${ew * 0.45}" ry="${eh * 0.7}" fill="${m.eyeColor}"/>` +
-                    `<ellipse cx="${ex + 0.5}" cy="${ey}" rx="${ew * 0.28}" ry="${eh * 0.5}" fill="black"/>` +
-                    `<circle cx="${ex + 2}" cy="${ey - 1}" r="1.5" fill="white" opacity="0.9"/>`;
-            },
-            wide: (ex, ey) => {
-                const ew = 10, eh = 11;
-                return `<ellipse cx="${ex}" cy="${ey}" rx="${ew}" ry="${eh}" fill="white" stroke="#2d2d2d" stroke-width="0.8"/>` +
-                    `<ellipse cx="${ex + 0.5}" cy="${ey + 1}" rx="${ew * 0.52}" ry="${eh * 0.56}" fill="${m.eyeColor}"/>` +
-                    `<ellipse cx="${ex + 0.5}" cy="${ey + 1}" rx="${ew * 0.32}" ry="${eh * 0.35}" fill="black"/>` +
-                    `<circle cx="${ex + 2.5}" cy="${ey - 3}" r="3.2" fill="white" opacity="0.9"/>`;
-            },
-            sleepy: (ex, ey) => {
-                const ew = 7, eh = 6;
-                return `<ellipse cx="${ex}" cy="${ey + 1}" rx="${ew}" ry="${eh}" fill="white" stroke="#2d2d2d" stroke-width="0.8"/>` +
-                    `<ellipse cx="${ex}" cy="${ey + 2}" rx="${ew * 0.5}" ry="${eh * 0.5}" fill="${m.eyeColor}"/>` +
-                    `<ellipse cx="${ex}" cy="${ey + 2}" rx="${ew * 0.3}" ry="${eh * 0.32}" fill="black"/>` +
-                    `<path d="M${ex - ew - 1},${ey - 4} Q${ex},${ey - 6} ${ex + ew + 1},${ey - 3}" fill="none" stroke="#2d2d2d" stroke-width="1.5" stroke-linecap="round"/>` +
-                    `<circle cx="${ex + 1.5}" cy="${ey - 1}" r="1.8" fill="white" opacity="0.9"/>`;
-            },
-            bright: (ex, ey) => {
-                const ew = 8, eh = 9;
-                return `<ellipse cx="${ex}" cy="${ey}" rx="${ew}" ry="${eh}" fill="white" stroke="#2d2d2d" stroke-width="0.8"/>` +
-                    `<ellipse cx="${ex}" cy="${ey + 0.5}" rx="${ew * 0.55}" ry="${eh * 0.55}" fill="${m.eyeColor}"/>` +
-                    `<ellipse cx="${ex}" cy="${ey + 0.5}" rx="${ew * 0.33}" ry="${eh * 0.35}" fill="black"/>` +
-                    `<circle cx="${ex + 2}" cy="${ey - 2.5}" r="2.8" fill="white" opacity="0.95"/>` +
-                    `<circle cx="${ex - 1.5}" cy="${ey + 2}" r="1.2" fill="white" opacity="0.5"/>`;
-            }
-        };
-        const drawEye2 = eyeDefs[m.eyeShape] || eyeDefs.normal;
-        svg += drawEye2(hcx - eyeGap, eyeY2);
-        svg += drawEye2(hcx + eyeGap, eyeY2);
-
-        // === NOSE (Mii-style: small simple shape) ===
-        const noseY2 = eyeY2 + headRY * 0.24;
-        const noseDefs = {
-            small: `<ellipse cx="${hcx}" cy="${noseY2}" rx="3" ry="2.5" fill="${darken(skin, 15)}" opacity="0.55"/>`,
-            medium: `<path d="M${hcx - 3.5},${noseY2 - 2} L${hcx},${noseY2 + 4} L${hcx + 3.5},${noseY2 - 2}" fill="none" stroke="${darken(skin, 18)}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>`,
-            large: `<ellipse cx="${hcx}" cy="${noseY2}" rx="5.5" ry="4.5" fill="${darken(skin, 12)}" opacity="0.45"/>`,
-            pointed: `<path d="M${hcx},${noseY2 - 5} L${hcx - 3},${noseY2 + 3} L${hcx + 3},${noseY2 + 3} Z" fill="${darken(skin, 12)}" opacity="0.5"/>`,
-            round: `<circle cx="${hcx}" cy="${noseY2}" r="4" fill="${darken(skin, 12)}" opacity="0.45"/>`,
-            flat: `<line x1="${hcx - 3.5}" y1="${noseY2}" x2="${hcx + 3.5}" y2="${noseY2}" stroke="${darken(skin, 18)}" stroke-width="1.5" stroke-linecap="round"/>`
-        };
-        svg += noseDefs[m.nose] || noseDefs.small;
-
-        // === MOUTH (Mii-style: simple curves) ===
-        const mouthY2 = noseY2 + headRY * 0.28;
-        const mw = headRX * 0.25;
-        const mouthDefs = {
-            smile: `<path d="M${hcx - mw},${mouthY2 - 1} Q${hcx},${mouthY2 + mw * 0.8} ${hcx + mw},${mouthY2 - 1}" fill="none" stroke="#d44" stroke-width="2" stroke-linecap="round"/>`,
-            neutral: `<line x1="${hcx - mw}" y1="${mouthY2 + 1}" x2="${hcx + mw}" y2="${mouthY2 + 1}" stroke="#d44" stroke-width="2" stroke-linecap="round"/>`,
-            open: `<ellipse cx="${hcx}" cy="${mouthY2 + 2}" rx="${mw * 0.9}" ry="${mw * 0.55}" fill="#c33"/><ellipse cx="${hcx}" cy="${mouthY2 + 1}" rx="${mw * 0.7}" ry="${mw * 0.35}" fill="#e55"/>`,
-            smirk: `<path d="M${hcx - mw},${mouthY2 + 1} Q${hcx + 2},${mouthY2 + mw * 0.7} ${hcx + mw},${mouthY2 - 2}" fill="none" stroke="#d44" stroke-width="2" stroke-linecap="round"/>`,
-            grin: `<path d="M${hcx - mw - 2},${mouthY2} Q${hcx},${mouthY2 + mw} ${hcx + mw + 2},${mouthY2}" fill="white" stroke="#d44" stroke-width="1.5"/><line x1="${hcx - mw}" y1="${mouthY2 + 0.5}" x2="${hcx + mw}" y2="${mouthY2 + 0.5}" stroke="#d44" stroke-width="0.8"/>`,
-            pout: `<path d="M${hcx - mw},${mouthY2 + 4} Q${hcx},${mouthY2 - 2} ${hcx + mw},${mouthY2 + 4}" fill="none" stroke="#d44" stroke-width="2" stroke-linecap="round"/>`
-        };
-        svg += mouthDefs[m.mouth] || mouthDefs.smile;
-
-        // === GLASSES (Mii-style thick frames) ===
-        if (m.glasses !== 'none') {
-            const gx = eyeGap;
-            const gy = eyeY2;
-            const ghw = headRX * 0.3;
-            const ghh = headRY * 0.26;
-            const gdefs = {
-                round: `<circle cx="${hcx - gx}" cy="${gy}" r="${ghw}" fill="none" stroke="#2d2d2d" stroke-width="2.2"/><circle cx="${hcx + gx}" cy="${gy}" r="${ghw}" fill="none" stroke="#2d2d2d" stroke-width="2.2"/><line x1="${hcx - gx + ghw}" y1="${gy}" x2="${hcx + gx - ghw}" y2="${gy}" stroke="#2d2d2d" stroke-width="2"/>`,
-                square: `<rect x="${hcx - gx - ghw}" y="${gy - ghh}" width="${ghw * 2}" height="${ghh * 2}" rx="3" fill="none" stroke="#2d2d2d" stroke-width="2.2"/><rect x="${hcx + gx - ghw}" y="${gy - ghh}" width="${ghw * 2}" height="${ghh * 2}" rx="3" fill="none" stroke="#2d2d2d" stroke-width="2.2"/><line x1="${hcx - gx + ghw}" y1="${gy}" x2="${hcx + gx - ghw}" y2="${gy}" stroke="#2d2d2d" stroke-width="2"/>`,
-                aviator: `<path d="M${hcx - gx - ghw - 2},${gy - 2} Q${hcx - gx},${gy - ghh - 4} ${hcx - gx + ghw + 2},${gy - 2} Q${hcx - gx},${gy + ghh + 4} ${hcx - gx - ghw - 2},${gy - 2}" fill="none" stroke="#5c3a1a" stroke-width="2"/><path d="M${hcx + gx - ghw - 2},${gy - 2} Q${hcx + gx},${gy - ghh - 4} ${hcx + gx + ghw + 2},${gy - 2} Q${hcx + gx},${gy + ghh + 4} ${hcx + gx - ghw - 2},${gy - 2}" fill="none" stroke="#5c3a1a" stroke-width="2"/><line x1="${hcx - gx + ghw}" y1="${gy}" x2="${hcx + gx - ghw}" y2="${gy}" stroke="#5c3a1a" stroke-width="2"/>`,
-                'cat-eye': `<path d="M${hcx - gx - ghw - 3},${gy + 2} L${hcx - gx - ghw + 2},${gy - ghh - 2} L${hcx - gx + ghw + 2},${gy - ghh} L${hcx - gx + ghw + 1},${gy + ghh}" fill="none" stroke="#2d2d2d" stroke-width="2.2"/><path d="M${hcx + gx + ghw + 3},${gy + 2} L${hcx + gx + ghw - 2},${gy - ghh - 2} L${hcx + gx - ghw - 2},${gy - ghh} L${hcx + gx - ghw - 1},${gy + ghh}" fill="none" stroke="#2d2d2d" stroke-width="2.2"/><line x1="${hcx - gx + ghw + 1}" y1="${gy}" x2="${hcx + gx - ghw - 1}" y2="${gy}" stroke="#2d2d2d" stroke-width="2"/>`,
-                'half-rim': `<line x1="${hcx - gx - ghw}" y1="${gy}" x2="${hcx - gx + ghw}" y2="${gy}" stroke="#2d2d2d" stroke-width="2.5"/><path d="M${hcx - gx - ghw},${gy} Q${hcx - gx},${gy + ghh + 2} ${hcx - gx + ghw},${gy}" fill="none" stroke="#2d2d2d" stroke-width="1.5"/><line x1="${hcx + gx - ghw}" y1="${gy}" x2="${hcx + gx + ghw}" y2="${gy}" stroke="#2d2d2d" stroke-width="2.5"/><path d="M${hcx + gx - ghw},${gy} Q${hcx + gx},${gy + ghh + 2} ${hcx + gx + ghw},${gy}" fill="none" stroke="#2d2d2d" stroke-width="1.5"/><line x1="${hcx - gx + ghw}" y1="${gy}" x2="${hcx + gx - ghw}" y2="${gy}" stroke="#2d2d2d" stroke-width="2"/>`
-            };
-            svg += gdefs[m.glasses] || gdefs.round;
-        }
-
-        // === HAT (3D shaded Mii-style) ===
-        if (m.hat !== 'none') {
-            const hatDefs = {
-                cap: `<path d="M${hcx - hairW - 5},${hairTop + 6} Q${hcx - hairW - 5},${hairTop - 16} ${hcx},${hairTop - 18} Q${hcx + hairW + 5},${hairTop - 16} ${hcx + hairW + 5},${hairTop + 6}" fill="#2563eb" stroke="#1d4ed8" stroke-width="0.8"/><ellipse cx="${hcx}" cy="${hairTop + 6}" rx="${hairW + 6}" ry="5" fill="#2563eb"/><rect x="${hcx + hairW - 6}" y="${hairTop - 2}" width="22" height="6" rx="3" fill="#1d4ed8"/>`,
-                beanie: `<path d="M${hcx - hairW - 4},${hairTop + 8} Q${hcx - hairW - 6},${hairTop - 14} ${hcx},${hairTop - 18} Q${hcx + hairW + 6},${hairTop - 14} ${hcx + hairW + 4},${hairTop + 8}" fill="#dc2626" stroke="#b91c1c" stroke-width="0.8"/><ellipse cx="${hcx}" cy="${hairTop + 8}" rx="${hairW + 5}" ry="5" fill="#b91c1c"/><circle cx="${hcx}" cy="${hairTop - 18}" r="5" fill="#f5f5f5"/>`,
-                tophat: `<rect x="${hcx - 24}" y="${hairTop - 42}" width="48" height="34" rx="4" fill="#1e293b" stroke="#0f172a" stroke-width="0.8"/><ellipse cx="${hcx}" cy="${hairTop - 8}" rx="${hairW + 8}" ry="5" fill="#1e293b"/><rect x="${hcx - 22}" y="${hairTop - 14}" width="44" height="6" rx="2" fill="#7c3aed"/>`,
-                headband: `<rect x="${hcx - hairW - 5}" y="${hairTop + 4}" width="${(hairW + 5) * 2}" height="5" rx="2.5" fill="#ef4444" stroke="#dc2626" stroke-width="0.5"/>`,
-                bow: `<path d="M${hcx},${hairTop + 2} Q${hcx - 12},${hairTop - 12} ${hcx - 20},${hairTop + 2} Q${hcx - 12},${hairTop + 10} ${hcx},${hairTop + 2}" fill="#ec4899" stroke="#be185d" stroke-width="0.5"/><path d="M${hcx},${hairTop + 2} Q${hcx + 12},${hairTop - 12} ${hcx + 20},${hairTop + 2} Q${hcx + 12},${hairTop + 10} ${hcx},${hairTop + 2}" fill="#ec4899" stroke="#be185d" stroke-width="0.5"/><circle cx="${hcx}" cy="${hairTop + 2}" r="2.5" fill="#be185d"/>`
-            };
-            svg += hatDefs[m.hat] || '';
-        }
-
-        // === ACCESSORIES ===
-        if (m.accessory === 'earring') {
-            svg += `<circle cx="${hcx - headRX - 3}" cy="${headCY + headRY * 0.35}" r="2.5" fill="#f5c542" stroke="#d4a017" stroke-width="0.5"/>`;
-            svg += `<circle cx="${hcx + headRX + 3}" cy="${headCY + headRY * 0.35}" r="2.5" fill="#f5c542" stroke="#d4a017" stroke-width="0.5"/>`;
-        } else if (m.accessory === 'necklace') {
-            svg += `<path d="M${hcx - 14},${bodyY + 3} Q${hcx},${bodyY + 14} ${hcx + 14},${bodyY + 3}" fill="none" stroke="#f5c542" stroke-width="1.5"/>`;
-            svg += `<circle cx="${hcx}" cy="${bodyY + 12}" r="2.5" fill="#f5c542" stroke="#d4a017" stroke-width="0.5"/>`;
-        } else if (m.accessory === 'bowtie') {
-            svg += `<path d="M${hcx},${bodyY + 1} L${hcx - 8},${bodyY - 4} L${hcx - 8},${bodyY + 6} Z" fill="#ef4444" stroke="#dc2626" stroke-width="0.5"/>`;
-            svg += `<path d="M${hcx},${bodyY + 1} L${hcx + 8},${bodyY - 4} L${hcx + 8},${bodyY + 6} Z" fill="#ef4444" stroke="#dc2626" stroke-width="0.5"/>`;
-            svg += `<circle cx="${hcx}" cy="${bodyY + 1}" r="2" fill="#dc2626"/>`;
-        } else if (m.accessory === 'scarf') {
-            svg += `<path d="M${hcx - 18},${bodyY + 1} Q${hcx},${bodyY + 10} ${hcx + 18},${bodyY + 1}" fill="#3b82f6" stroke="#2563eb" stroke-width="0.8"/>`;
-            svg += `<rect x="${hcx - 3}" y="${bodyY + 5}" width="6" height="14" rx="2.5" fill="#3b82f6"/>`;
-        }
-
-        svg += '</svg>';
-        return svg;
-    }
-
-    function lighten(hex, pct) {
-        const num = parseInt(hex.replace('#', ''), 16);
-        const r = Math.min(255, (num >> 16) + Math.round(2.55 * pct));
-        const g = Math.min(255, ((num >> 8) & 0xff) + Math.round(2.55 * pct));
-        const b = Math.min(255, (num & 0xff) + Math.round(2.55 * pct));
-        return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
-    }
-
-    function darken(hex, pct) {
-        const num = parseInt(hex.replace('#', ''), 16);
-        const r = Math.max(0, (num >> 16) - Math.round(2.55 * pct));
-        const g = Math.max(0, ((num >> 8) & 0xff) - Math.round(2.55 * pct));
-        const b = Math.max(0, (num & 0xff) - Math.round(2.55 * pct));
-        return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
-    }
-
-    // === Render SVG into stage ===
+    // === Render Mii into stage ===
     function renderStage() {
         const svgEl = document.getElementById('profileMiiSvg');
-        if (svgEl) svgEl.innerHTML = renderMiiSvg(currentMii);
+        if (!svgEl) return;
+        currentStudioData = buildStudioData();
+        const url = buildMiiUrl(512);
+        svgEl.innerHTML = `<img src="${url}" alt="Your Mii" style="width:100%;height:100%;object-fit:contain;" onerror="this.src='${studioHexToUrl(DEFAULT_STUDIO, 512)}'">`;
         const nameEl = document.getElementById('profileMiiDisplayName');
         if (nameEl) nameEl.textContent = document.getElementById('profileNameInput')?.value || 'Your Mii';
         const roleEl = document.getElementById('profileMiiRole');
@@ -1707,22 +1638,19 @@ function initProfile() {
         let html = '';
         defs.forEach(def => {
             html += `<div class="profile-panel-section"><div class="profile-panel-label">${def.label}</div><div class="profile-panel-row">`;
-            def.items.forEach(item => {
-                const val = currentMii[def.key];
-                const isActive = val === item;
-                if (def.color) {
-                    html += `<div class="profile-color${isActive ? ' active' : ''}" data-key="${def.key}" data-val="${item}" style="background:${item}"></div>`;
-                } else {
-                    html += `<div class="profile-chip${isActive ? ' active' : ''}" data-key="${def.key}" data-val="${item}">${item === 'none' ? 'None' : item}</div>`;
-                }
+            def.items.forEach((item, idx) => {
+                const val = editorState[def.key];
+                const isActive = val === idx;
+                html += `<div class="profile-chip${isActive ? ' active' : ''}" data-key="${def.key}" data-val="${idx}">${item}</div>`;
             });
             html += '</div></div>';
         });
         panels.innerHTML = html;
 
-        panels.querySelectorAll('.profile-chip, .profile-color').forEach(el => {
+        panels.querySelectorAll('.profile-chip').forEach(el => {
             el.addEventListener('click', () => {
-                currentMii[el.dataset.key] = el.dataset.val;
+                editorState[el.dataset.key] = parseInt(el.dataset.val);
+                currentStudioData = buildStudioData();
                 renderStage();
                 renderPanels();
             });
@@ -1735,7 +1663,7 @@ function initProfile() {
         renderPanels();
     }
 
-    // === Saved Accounts Grid (reusable for auth + bottom) ===
+    // === Saved Accounts Grid ===
     function renderSavedAccounts(containerId, showSwitch) {
         const el = document.getElementById(containerId);
         if (!el) return;
@@ -1746,11 +1674,11 @@ function initProfile() {
         let html = '';
         names.forEach(name => {
             const a = accounts[name];
-            const mii = { ...DEFAULT_MII, ...(a.mii || {}) };
+            const miiHex = a.miiStudio || DEFAULT_STUDIO;
             const isActive = session?.username === name;
             const roleLabel = a.role === 'admin' ? '★ Admin' : 'Member';
             html += `<div class="profile-saved-card${isActive ? ' active' : ''}" data-user="${name}">
-                <div class="profile-saved-mini">${renderMiiSvg(mii, 40, 48)}</div>
+                <div class="profile-saved-mini">${renderMiiImg(miiHex, 96)}</div>
                 <div class="profile-saved-card-name">${name}</div>
                 <div class="profile-saved-card-role">${roleLabel}</div>
                 <button class="profile-saved-card-del" data-del="${name}">&times;</button>
@@ -1764,9 +1692,12 @@ function initProfile() {
                     if (e.target.closest('.profile-saved-card-del')) return;
                     const name = card.dataset.user;
                     const a = accounts[name];
-                    saveSession({ username: name, role: a.role, mii: a.mii });
-                    currentMii = { ...DEFAULT_MII, ...(a.mii || {}) };
-                    document.getElementById('profileNameInput').value = name;
+                    saveSession({ username: name, role: a.role, miiStudio: a.miiStudio });
+                    if (a.miiStudio) {
+                        const parsed = parseStudioCode(a.miiStudio);
+                        if (parsed) editorState = editorStateFromStudioData(parsed);
+                    }
+                    currentStudioData = buildStudioData();
                     showEditor();
                     renderStage();
                     renderPanels();
@@ -1806,7 +1737,7 @@ function initProfile() {
         if (editor) editor.style.display = 'none';
         renderSavedAccounts('profileSavedGrid', true);
         const miiEl = document.getElementById('profileAuthMii');
-        if (miiEl) miiEl.innerHTML = renderMiiSvg(DEFAULT_MII, 64, 64);
+        if (miiEl) miiEl.innerHTML = renderMiiImg(DEFAULT_STUDIO, 128);
     }
 
     function showEditor() {
@@ -1817,8 +1748,12 @@ function initProfile() {
         const s = getSession();
         if (s) {
             document.getElementById('profileNameInput').value = s.username;
-            currentMii = { ...DEFAULT_MII, ...(s.mii || {}) };
+            if (s.miiStudio) {
+                const parsed = parseStudioCode(s.miiStudio);
+                if (parsed) editorState = editorStateFromStudioData(parsed);
+            }
         }
+        currentStudioData = buildStudioData();
         renderStage();
         renderPanels();
     }
@@ -1833,8 +1768,12 @@ function initProfile() {
         const accounts = getAccounts();
         if (!accounts[u]) { err.textContent = 'Account not found.'; return; }
         if (accounts[u].password !== p) { err.textContent = 'Wrong password.'; return; }
-        saveSession({ username: u, role: accounts[u].role, mii: accounts[u].mii });
-        currentMii = { ...DEFAULT_MII, ...(accounts[u].mii || {}) };
+        saveSession({ username: u, role: accounts[u].role, miiStudio: accounts[u].miiStudio });
+        if (accounts[u].miiStudio) {
+            const parsed = parseStudioCode(accounts[u].miiStudio);
+            if (parsed) editorState = editorStateFromStudioData(parsed);
+        }
+        currentStudioData = buildStudioData();
         showEditor();
         updateSidebarUser();
         updateAdminUI();
@@ -1853,10 +1792,11 @@ function initProfile() {
         if (p !== c) { err.textContent = 'Passwords do not match.'; return; }
         const accounts = getAccounts();
         if (accounts[u]) { err.textContent = 'Username taken.'; return; }
-        accounts[u] = { password: p, role: Object.keys(accounts).length === 0 ? 'admin' : 'member', mii: { ...DEFAULT_MII }, created: Date.now() };
+        randomizeMii();
+        const studioHex = studioDataToHex(currentStudioData);
+        accounts[u] = { password: p, role: Object.keys(accounts).length === 0 ? 'admin' : 'member', miiStudio: studioHex, created: Date.now() };
         saveAccounts(accounts);
-        saveSession({ username: u, role: accounts[u].role, mii: accounts[u].mii });
-        currentMii = { ...DEFAULT_MII };
+        saveSession({ username: u, role: accounts[u].role, miiStudio: studioHex });
         showEditor();
         updateSidebarUser();
         updateAdminUI();
@@ -1879,24 +1819,13 @@ function initProfile() {
     });
 
     // === Editor Handlers ===
-    document.getElementById('profileTab')?.addEventListener('click', () => {}); // handled via delegation
     document.getElementById('profileTabs')?.addEventListener('click', (e) => {
         const tab = e.target.closest('.profile-tab');
         if (tab) switchTab(tab.dataset.tab);
     });
 
     document.getElementById('profileRandomBtn')?.addEventListener('click', () => {
-        const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-        currentMii = {
-            face: pick(FACES), skin: pick(SKINS), hair: pick(HAIR_STYLES),
-            hairColor: pick(HAIR_COLORS), eyeShape: pick(EYE_SHAPES), eyeColor: pick(EYE_COLORS),
-            nose: pick(NOSE_SHAPES), mouth: pick(MOUTH_SHAPES), brows: pick(BROW_STYLES),
-            glasses: pick(GLASSES_SET), hat: pick(HAT_SET), shirtColor: pick(SHIRT_COLORS),
-            bodyType: pick(BODY_TYPES), bodyColor: pick(BODY_COLORS), accessory: pick(ACCESSORIES)
-        };
-        renderStage();
-        renderPanels();
-        showToast('Random Mii generated!', 'info');
+        randomizeMii();
     });
 
     document.getElementById('profileSaveBtn')?.addEventListener('click', () => {
@@ -1905,9 +1834,11 @@ function initProfile() {
         const accounts = getAccounts();
         const isNew = !accounts[name];
         const role = isNew ? (Object.keys(accounts).length === 0 ? 'admin' : 'member') : accounts[name].role;
-        accounts[name] = { password: accounts[name]?.password || 'mii', role, mii: { ...currentMii } };
+        currentStudioData = buildStudioData();
+        const studioHex = studioDataToHex(currentStudioData);
+        accounts[name] = { password: accounts[name]?.password || 'mii', role, miiStudio: studioHex };
         saveAccounts(accounts);
-        saveSession({ username: name, role, mii: { ...currentMii } });
+        saveSession({ username: name, role, miiStudio: studioHex });
         updateSidebarUser();
         updateAdminUI();
         renderSavedAccounts('profileSavedGrid', true);
@@ -1927,7 +1858,7 @@ function initProfile() {
         switchView('viewMiiMaker');
     });
 
-    // === Admin Game Edit (preserved from old system) ===
+    // === Admin Game Edit ===
     const gdAdminEdit = document.getElementById('gdAdminEdit');
     if (gdAdminEdit) {
         gdAdminEdit.addEventListener('click', () => {
@@ -1964,7 +1895,6 @@ function initProfile() {
         showToast('Game updated!', 'success');
     });
 
-    // Load saved admin edits
     (function loadShopEdits() {
         try {
             const saved = JSON.parse(localStorage.getItem('aerocade_shop_edits') || '[]');
@@ -1975,13 +1905,16 @@ function initProfile() {
         } catch(e) {}
     })();
 
-    // Expose for other modules
     window._aeroAcct = { isAdmin, updateAdminUI, getSession };
 
     // === Initial render ===
     const session = getSession();
     if (session) {
-        currentMii = { ...DEFAULT_MII, ...(session.mii || {}) };
+        if (session.miiStudio) {
+            const parsed = parseStudioCode(session.miiStudio);
+            if (parsed) editorState = editorStateFromStudioData(parsed);
+        }
+        currentStudioData = buildStudioData();
         showEditor();
         renderSavedAccounts('profileSavedGridBottom', false);
     } else {
