@@ -981,38 +981,38 @@
 
     // ==================== WII SHOP ====================
     const SHOP_GAMES = [
-        { name: 'Super Mario Bros.', console: 'nes', emoji: '\u{1F34E}', color: '#fee2e2', price: 500 },
-        { name: 'The Legend of Zelda', console: 'nes', emoji: '\u{1F6E1}', color: '#d1fae5', price: 500 },
-        { name: 'Metroid', console: 'nes', emoji: '\u{1F47E}', color: '#dbeafe', price: 500 },
-        { name: 'Mega Man 2', console: 'nes', emoji: '\u{1F916}', color: '#dbeafe', price: 500 },
-        { name: 'Castlevania', console: 'nes', emoji: '\u{1F3DB}', color: '#e0e7ff', price: 500 },
-        { name: 'Contra', console: 'nes', emoji: '\u{1F3AF}', color: '#fee2e2', price: 500 },
-        { name: 'Super Mario World', console: 'snes', emoji: '\u{1F34E}', color: '#f3e8ff', price: 800 },
-        { name: 'The Legend of Zelda: ALTTP', console: 'snes', emoji: '\u{1F6E1}', color: '#d1fae5', price: 800 },
-        { name: 'Super Metroid', console: 'snes', emoji: '\u{1F47E}', color: '#e0e7ff', price: 800 },
-        { name: 'Chrono Trigger', console: 'snes', emoji: '\u{269B}', color: '#fef3c7', price: 800 },
-        { name: 'Final Fantasy VI', console: 'snes', emoji: '\u{2728}', color: '#fce7f3', price: 800 },
-        { name: 'Donkey Kong Country', console: 'snes', emoji: '\u{1F43C}', color: '#ffedd5', price: 800 },
-        { name: 'Super Mario 64', console: 'n64', emoji: '\u{1F34E}', color: '#dbeafe', price: 1000 },
-        { name: 'The Legend of Zelda: OoT', console: 'n64', emoji: '\u{1F6E1}', color: '#d1fae5', price: 1000 },
-        { name: 'Mario Kart 64', console: 'n64', emoji: '\u{1F3CE}', color: '#fee2e2', price: 1000 },
-        { name: 'GoldenEye 007', console: 'n64', emoji: '\u{1F52B}', color: '#fef3c7', price: 1000 },
-        { name: 'Star Fox 64', console: 'n64', emoji: '\u{1F680}', color: '#e0e7ff', price: 1000 },
-        { name: 'Banjo-Kazooie', console: 'n64', emoji: '\u{1F43B}', color: '#ffedd5', price: 1000 },
-        { name: 'Pok\u00E9mon Red', console: 'gb', emoji: '\u{1F534}', color: '#fee2e2', price: 400 },
-        { name: 'Pok\u00E9mon Blue', console: 'gb', emoji: '\u{1F535}', color: '#dbeafe', price: 400 },
-        { name: 'The Legend of Zelda: LA', console: 'gb', emoji: '\u{1F6E1}', color: '#d1fae5', price: 400 },
-        { name: 'Tetris', console: 'gb', emoji: '\u{1F9E9}', color: '#f3e8ff', price: 400 },
-        { name: 'Super Mario Land', console: 'gb', emoji: '\u{1F34E}', color: '#fef3c7', price: 400 },
-        { name: 'Sonic the Hedgehog', console: 'genesis', emoji: '\u{1F3AC}', color: '#dbeafe', price: 600 },
-        { name: 'Sonic the Hedgehog 2', console: 'genesis', emoji: '\u{1F3AC}', color: '#d1fae5', price: 600 },
-        { name: 'Streets of Rage 2', console: 'genesis', emoji: '\u{1F44A}', color: '#fee2e2', price: 600 },
-        { name: 'Golden Axe', console: 'genesis', emoji: '\u2694', color: '#ffedd5', price: 600 },
-        { name: 'Phantasy Star IV', console: 'genesis', emoji: '\u{1F30C}', color: '#e0e7ff', price: 600 },
-        { name: 'Crash Bandicoot', console: 'ps1', emoji: '\u{1F34A}', color: '#ffedd5', price: 1200 },
-        { name: 'Final Fantasy VII', console: 'ps1', emoji: '\u2728', color: '#dbeafe', price: 1200 },
-        { name: 'Spyro the Dragon', console: 'ps1', emoji: '\u{1F409}', color: '#f3e8ff', price: 1200 },
-        { name: 'Metal Gear Solid', console: 'ps1', emoji: '\u{1F5E1}', color: '#d1fae5', price: 1200 },
+        { name: 'Super Mario Bros.', console: 'nes', emoji: '\u{1F34E}', color: '#fee2e2', accent: '#dc2626', bg: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', price: 500, desc: 'The game that defined a generation. Run, jump, and save the Mushroom Kingdom!', rating: 'E', year: 1985, videoUrl: '' },
+        { name: 'The Legend of Zelda', console: 'nes', emoji: '\u{1F6E1}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)', price: 500, desc: 'Explore Hyrule, find 8 Triforce pieces, and defeat Ganon.', rating: 'E', year: 1986, videoUrl: '' },
+        { name: 'Metroid', console: 'nes', emoji: '\u{1F47E}', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #0c0c1d, #1a1a3e, #2d1b69)', price: 500, desc: 'Bounty hunter Samus Aran explores planet Zebes alone.', rating: 'E', year: 1986, videoUrl: '' },
+        { name: 'Mega Man 2', console: 'nes', emoji: '\u{1F916}', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #141e30, #243b55)', price: 500, desc: 'Defeat 8 Robot Masters and take their powers!', rating: 'E', year: 1988, videoUrl: '' },
+        { name: 'Castlevania', console: 'nes', emoji: '\u{1F3DB}', color: '#e0e7ff', accent: '#4338ca', bg: 'linear-gradient(135deg, #1a0000, #3d0000, #5c0000)', price: 500, desc: 'Storm Dracula\'s castle as the legendary Belmont.', rating: 'E', year: 1986, videoUrl: '' },
+        { name: 'Contra', console: 'nes', emoji: '\u{1F3AF}', color: '#fee2e2', accent: '#dc2626', bg: 'linear-gradient(135deg, #1b1b2f, #162447, #1f4068)', price: 500, desc: 'Classic run-and-gun action with a friend!', rating: 'E', year: 1987, videoUrl: '' },
+        { name: 'Super Mario World', console: 'snes', emoji: '\u{1F34E}', color: '#f3e8ff', accent: '#7c3aed', bg: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', price: 800, desc: 'Yoshi\'s Island awaits! Ride Yoshi through 96 levels.', rating: 'E', year: 1990, videoUrl: '' },
+        { name: 'The Legend of Zelda: ALTTP', console: 'snes', emoji: '\u{1F6E1}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #0d1117, #161b22, #21262d)', price: 800, desc: 'The best top-down Zelda. Explore two parallel worlds.', rating: 'E', year: 1991, videoUrl: '' },
+        { name: 'Super Metroid', console: 'snes', emoji: '\u{1F47E}', color: '#e0e7ff', accent: '#4338ca', bg: 'linear-gradient(135deg, #0a0a1a, #1a0a2e, #2a1a3e)', price: 800, desc: 'Atmospheric masterpiece on planet Zebes.', rating: 'E', year: 1994, videoUrl: '' },
+        { name: 'Chrono Trigger', console: 'snes', emoji: '\u{269B}', color: '#fef3c7', accent: '#d97706', bg: 'linear-gradient(135deg, #141e30, #243b55, #2c5364)', price: 800, desc: 'Time-travel RPG perfection by the Dream Team.', rating: 'E', year: 1995, videoUrl: '' },
+        { name: 'Final Fantasy VI', console: 'snes', emoji: '\u{2728}', color: '#fce7f3', accent: '#db2777', bg: 'linear-gradient(135deg, #232526, #414345)', price: 800, desc: 'Kefka threatens to destroy the world. 14 playable characters.', rating: 'E', year: 1994, videoUrl: '' },
+        { name: 'Donkey Kong Country', console: 'snes', emoji: '\u{1F43C}', color: '#ffedd5', accent: '#ea580c', bg: 'linear-gradient(135deg, #1a1a00, #2d2d00, #4a4a00)', price: 800, desc: 'Pre-rendered 3D graphics were revolutionary in 1994.', rating: 'E', year: 1994, videoUrl: '' },
+        { name: 'Super Mario 64', console: 'n64', emoji: '\u{1F34E}', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #667eea, #764ba2)', price: 1000, desc: 'The game that defined 3D platforming forever.', rating: 'E', year: 1996, videoUrl: '' },
+        { name: 'The Legend of Zelda: OoT', console: 'n64', emoji: '\u{1F6E1}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #134e5e, #71b280)', price: 1000, desc: 'The greatest adventure of all time. Save Hyrule from Ganondorf.', rating: 'E', year: 1998, videoUrl: '' },
+        { name: 'Mario Kart 64', console: 'n64', emoji: '\u{1F3CE}', color: '#fee2e2', accent: '#dc2626', bg: 'linear-gradient(135deg, #c31432, #240b36)', price: 1000, desc: 'Blue shells and friendship destroyers since 1996.', rating: 'E', year: 1996, videoUrl: '' },
+        { name: 'GoldenEye 007', console: 'n64', emoji: '\u{1F52B}', color: '#fef3c7', accent: '#d97706', bg: 'linear-gradient(135deg, #1c1c1c, #2d2d2d, #3a3a3a)', price: 1000, desc: 'The FPS that proved console shooters work.', rating: 'T', year: 1997, videoUrl: '' },
+        { name: 'Star Fox 64', console: 'n64', emoji: '\u{1F680}', color: '#e0e7ff', accent: '#4338ca', bg: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', price: 1000, desc: 'Do a barrel roll! On-rails space combat.', rating: 'E', year: 1997, videoUrl: '' },
+        { name: 'Banjo-Kazooie', console: 'n64', emoji: '\u{1F43B}', color: '#ffedd5', accent: '#ea580c', bg: 'linear-gradient(135deg, #56ab2f, #a8e063)', price: 1000, desc: 'Bear and bird duo collect jiggies in magical worlds.', rating: 'E', year: 1998, videoUrl: '' },
+        { name: 'Pok\u00E9mon Red', console: 'gb', emoji: '\u{1F534}', color: '#fee2e2', accent: '#dc2626', bg: 'linear-gradient(135deg, #8b0000, #c0392b, #e74c3c)', price: 400, desc: 'Gotta catch \'em all! Start your journey as a Pok\u00E9mon trainer.', rating: 'E', year: 1996, videoUrl: '' },
+        { name: 'Pok\u00E9mon Blue', console: 'gb', emoji: '\u{1F535}', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #000428, #004e92)', price: 400, desc: 'The blue counterpart. Trade to complete your Pok\u00E9dex!', rating: 'E', year: 1996, videoUrl: '' },
+        { name: 'The Legend of Zelda: LA', console: 'gb', emoji: '\u{1F6E1}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #2c3e50, #4ca1af)', price: 400, desc: 'Link washes up on Koholint Island. Was it all a dream?', rating: 'E', year: 1993, videoUrl: '' },
+        { name: 'Tetris', console: 'gb', emoji: '\u{1F9E9}', color: '#f3e8ff', accent: '#7c3aed', bg: 'linear-gradient(135deg, #fc5c7d, #6a82fb)', price: 400, desc: 'The most addictive puzzle game ever made.', rating: 'E', year: 1989, videoUrl: '' },
+        { name: 'Super Mario Land', console: 'gb', emoji: '\u{1F34E}', color: '#fef3c7', accent: '#d97706', bg: 'linear-gradient(135deg, #4e54c8, #8f94fb)', price: 400, desc: 'Mario\'s portable debut adventure in Sarasaland.', rating: 'E', year: 1989, videoUrl: '' },
+        { name: 'Sonic the Hedgehog', console: 'genesis', emoji: '\u{1F3AC}', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #1e3c72, #2a5298)', price: 600, desc: 'Blast through Green Hill Zone at supersonic speed!', rating: 'E', year: 1991, videoUrl: '' },
+        { name: 'Sonic the Hedgehog 2', console: 'genesis', emoji: '\u{1F3AC}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #11998e, #38ef7d)', price: 600, desc: 'Meet Tails! The definitive 16-bit platformer.', rating: 'E', year: 1992, videoUrl: '' },
+        { name: 'Streets of Rage 2', console: 'genesis', emoji: '\u{1F44A}', color: '#fee2e2', accent: '#dc2626', bg: 'linear-gradient(135deg, #b92b27, #1565c0)', price: 600, desc: 'The best beat \'em up on any console. Incredible Yuzo Koshiro soundtrack.', rating: 'T', year: 1992, videoUrl: '' },
+        { name: 'Golden Axe', console: 'genesis', emoji: '\u2694', color: '#ffedd5', accent: '#ea580c', bg: 'linear-gradient(135deg, #3a1c71, #d76d77, #ffaf7b)', price: 600, desc: 'Hack, slash, and ride dragons through a fantasy world.', rating: 'T', year: 1991, videoUrl: '' },
+        { name: 'Phantasy Star IV', console: 'genesis', emoji: '\u{1F30C}', color: '#e0e7ff', accent: '#4338ca', bg: 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)', price: 600, desc: 'Epic sci-fi RPG with comic-panel cutscenes.', rating: 'T', year: 1993, videoUrl: '' },
+        { name: 'Crash Bandicoot', console: 'ps1', emoji: '\u{1F34A}', color: '#ffedd5', accent: '#ea580c', bg: 'linear-gradient(135deg, #f12711, #f5af19)', price: 1200, desc: 'Spin through Wumpa Island and stop Dr. Neo Cortex!', rating: 'E', year: 1996, videoUrl: '' },
+        { name: 'Final Fantasy VII', console: 'ps1', emoji: '\u2728', color: '#dbeafe', accent: '#2563eb', bg: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', price: 1200, desc: 'Cloud Strife vs Sephiroth. The JRPG that changed everything.', rating: 'T', year: 1997, videoUrl: '' },
+        { name: 'Spyro the Dragon', console: 'ps1', emoji: '\u{1F409}', color: '#f3e8ff', accent: '#7c3aed', bg: 'linear-gradient(135deg, #5b247a, #1bcedf)', price: 1200, desc: 'Glide and flame your way through 5 magical worlds.', rating: 'E', year: 1998, videoUrl: '' },
+        { name: 'Metal Gear Solid', console: 'ps1', emoji: '\u{1F5E1}', color: '#d1fae5', accent: '#059669', bg: 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)', price: 1200, desc: 'Tactical espionage action. Snake? Snaaake!', rating: 'M', year: 1998, videoUrl: '' },
     ];
 
     let wiishopCategory = 'all';
@@ -1025,18 +1025,24 @@
         const grid = $('#wiishopGrid');
         if (!grid) return;
         const games = wiishopCategory === 'all' ? SHOP_GAMES : SHOP_GAMES.filter(g => g.console === wiishopCategory);
-        grid.innerHTML = games.map(g => {
+        grid.innerHTML = games.map((g, i) => {
             const c = CONSOLES[g.console];
             const loaded = gameLibrary.find(l => l.name === g.name);
             const runningGame = loaded && running && activeConsole === g.console;
             let btnClass = 'get', btnText = 'Get';
             if (runningGame) { btnClass = 'playing'; btnText = 'Playing'; }
             else if (loaded) { btnClass = 'loaded'; btnText = 'Loaded'; }
-            return `<div class="wiishop-card" data-console="${g.console}" data-name="${g.name}">
-                <div class="wiishop-card-art" style="background:${g.color}">${g.emoji}</div>
+            return `<div class="wiishop-card" data-console="${g.console}" data-name="${g.name}" data-idx="${i}" style="animation-delay:${i * 0.04}s">
+                <div class="wiishop-card-art" style="background:${g.bg}">
+                    <span class="wiishop-cover-emoji">${g.emoji}</span>
+                    <div class="wiishop-cover-title">${g.name}</div>
+                    <div class="wiishop-cover-badge">${g.rating}</div>
+                    <div class="wiishop-cover-year">${g.year}</div>
+                    <div class="wiishop-cover-shine"></div>
+                </div>
                 <div class="wiishop-card-body">
                     <div class="wiishop-card-name">${g.name}</div>
-                    <div class="wiishop-card-console">${c ? c.name : g.console}</div>
+                    <div class="wiishop-card-console">${c ? c.name : g.console} &middot; ${g.desc.split('.')[0]}</div>
                     <div class="wiishop-card-bottom">
                         <span class="wiishop-card-price">${g.price.toLocaleString()}</span>
                         <button class="wiishop-card-btn ${btnClass}" data-console="${g.console}" data-name="${g.name}">${btnText}</button>
@@ -1061,13 +1067,106 @@
         });
 
         grid.querySelectorAll('.wiishop-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const con = card.dataset.console;
-                activeConsole = con;
-                showView('library');
+            card.addEventListener('click', (e) => {
+                const rect = card.getBoundingClientRect();
+                const ripple = document.createElement('div');
+                ripple.className = 'wiishop-card-ripple';
+                ripple.style.left = (e.clientX - rect.left - 100) + 'px';
+                ripple.style.top = (e.clientY - rect.top - 100) + 'px';
+                card.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+
+                const idx = parseInt(card.dataset.idx);
+                openGameDetail(idx);
+            });
+
+            card.addEventListener('mouseenter', () => {
+                const rect = card.getBoundingClientRect();
+                for (let j = 0; j < 3; j++) {
+                    const b = document.createElement('div');
+                    b.className = 'wiishop-card-hover-bubble';
+                    const size = 4 + Math.random() * 8;
+                    b.style.width = size + 'px';
+                    b.style.height = size + 'px';
+                    b.style.left = (Math.random() * rect.width) + 'px';
+                    b.style.bottom = '0';
+                    b.style.background = 'radial-gradient(circle, rgba(33,150,243,0.3), transparent)';
+                    card.appendChild(b);
+                    setTimeout(() => b.remove(), 800);
+                }
             });
         });
     }
+
+    function openGameDetail(idx) {
+        const g = SHOP_GAMES[idx];
+        if (!g) return;
+        const c = CONSOLES[g.console];
+        const modal = $('#gameDetailModal');
+        if (!modal) return;
+        const loaded = gameLibrary.find(l => l.name === g.name);
+        const runningGame = loaded && running && activeConsole === g.console;
+        let btnClass = 'get', btnText = 'Get';
+        if (runningGame) { btnClass = 'playing'; btnText = 'Playing'; }
+        else if (loaded) { btnClass = 'loaded'; btnText = 'Loaded'; }
+
+        let videoHtml = '';
+        if (g.videoUrl) {
+            const isYT = g.videoUrl.includes('youtube.com') || g.videoUrl.includes('youtu.be');
+            const embedUrl = isYT ? g.videoUrl.replace('watch?v=', 'embed/') : g.videoUrl;
+            videoHtml = `<div class="gd-video-wrap"><iframe src="${embedUrl}" frameborder="0" allowfullscreen></iframe></div>`;
+        } else {
+            videoHtml = `<div class="gd-video-placeholder">
+                <div class="gd-video-icon">\u{1F3AC}</div>
+                <p>No video preview available</p>
+                <span>Video URL can be set in the game data</span>
+            </div>`;
+        }
+
+        modal.querySelector('.gd-cover').style.background = g.bg;
+        modal.querySelector('.gd-cover-emoji').textContent = g.emoji;
+        modal.querySelector('.gd-cover-title').textContent = g.name;
+        modal.querySelector('.gd-cover-badge').textContent = g.rating;
+        modal.querySelector('.gd-cover-year').textContent = g.year;
+        modal.querySelector('.gd-name').textContent = g.name;
+        modal.querySelector('.gd-console').textContent = (c ? c.name : g.console);
+        modal.querySelector('.gd-desc').textContent = g.desc;
+        modal.querySelector('.gd-price-val').textContent = g.price.toLocaleString();
+        modal.querySelector('.gd-video-section').innerHTML = videoHtml;
+        const actionBtn = modal.querySelector('.gd-action-btn');
+        actionBtn.className = `gd-action-btn ${btnClass}`;
+        actionBtn.textContent = btnText;
+        actionBtn.dataset.console = g.console;
+        actionBtn.dataset.name = g.name;
+
+        modal.classList.add('show');
+        modal.dataset.idx = idx;
+    }
+
+    function closeGameDetail() {
+        const modal = $('#gameDetailModal');
+        if (modal) modal.classList.remove('show');
+    }
+
+    document.addEventListener('click', e => {
+        if (e.target.id === 'gameDetailModal' || e.target.closest('.gd-close')) closeGameDetail();
+    });
+
+    document.addEventListener('click', e => {
+        const actionBtn = e.target.closest('.gd-action-btn');
+        if (!actionBtn) return;
+        const con = actionBtn.dataset.console;
+        if (actionBtn.classList.contains('loaded') || actionBtn.classList.contains('playing')) {
+            closeGameDetail();
+            activeConsole = con;
+            showView('library');
+            return;
+        }
+        activeConsole = con;
+        romFileInput.accept = (CONSOLES[con]?.exts || []).join(',');
+        closeGameDetail();
+        romFileInput.click();
+    });
 
     $('#wiishopCategories')?.addEventListener('click', (e) => {
         const btn = e.target.closest('.wiishop-cat');
