@@ -639,79 +639,8 @@
         iframe.style.cssText = 'width:100%;height:100%;border:none;border-radius:8px;';
         iframe.allow = 'autoplay; fullscreen';
 
-        let ejsColor = '#a855f7';
         let gameNameClean = currentRomName.replace(/[^a-zA-Z0-9]/g, '_');
-
-        iframe.srcdoc = `<!DOCTYPE html>
-<html><head><style>body,html{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;}</style></head>
-<body><div id="game" style="width:100%;height:100%;"></div>
-<script>
-EJS_player = '#game';
-EJS_core = '${consoleId}';
-EJS_gameUrl = '${blobUrl}';
-EJS_gameName = '${gameNameClean}';
-EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
-EJS_color = '${ejsColor}';
-EJS_startOnLoaded = true;
-EJS_askBeforeExit = false;
-EJS_controlScheme = 'n64';
-EJS_Buttons = {
-    playPause: false,
-    restart: true,
-    mute: true,
-    settings: true,
-    fullscreen: true,
-    saveState: true,
-    loadState: true,
-    screenRecord: false,
-    gamepad: true,
-    cheat: false,
-    volume: true,
-    saveSavFiles: false,
-    loadSavFiles: false,
-    quickSave: false,
-    quickLoad: false,
-    screenshot: true,
-    cacheManager: false,
-    exitEmulation: true
-};
-EJS_defaultControls = {
-    0: {
-        0: { 'value': 'x', 'value2': 'BUTTON_2' },
-        1: { 'value': 's', 'value2': 'BUTTON_4' },
-        2: { 'value': 'v', 'value2': 'SELECT' },
-        3: { 'value': 'enter', 'value2': 'START' },
-        4: { 'value': 'up arrow', 'value2': 'DPAD_UP' },
-        5: { 'value': 'down arrow', 'value2': 'DPAD_DOWN' },
-        6: { 'value': 'left arrow', 'value2': 'DPAD_LEFT' },
-        7: { 'value': 'right arrow', 'value2': 'DPAD_RIGHT' },
-        8: { 'value': 'z', 'value2': 'BUTTON_1' },
-        9: { 'value': 'a', 'value2': 'BUTTON_3' },
-        10: { 'value': 'q', 'value2': 'LEFT_TOP_SHOULDER' },
-        11: { 'value': 'e', 'value2': 'RIGHT_TOP_SHOULDER' },
-        12: { 'value': 'tab', 'value2': 'LEFT_BOTTOM_SHOULDER' },
-        13: { 'value': 'r', 'value2': 'RIGHT_BOTTOM_SHOULDER' },
-        14: { 'value': '', 'value2': 'LEFT_STICK' },
-        15: { 'value': '', 'value2': 'RIGHT_STICK' },
-        16: { 'value': 'l', 'value2': 'LEFT_STICK_X:+1' },
-        17: { 'value': 'j', 'value2': 'LEFT_STICK_X:-1' },
-        18: { 'value': 'k', 'value2': 'LEFT_STICK_Y:+1' },
-        19: { 'value': 'i', 'value2': 'LEFT_STICK_Y:-1' },
-        20: { 'value': 'n', 'value2': 'RIGHT_STICK_X:+1' },
-        21: { 'value': 'b', 'value2': 'RIGHT_STICK_X:-1' },
-        22: { 'value': 'm', 'value2': 'RIGHT_STICK_Y:+1' },
-        23: { 'value': 'h', 'value2': 'RIGHT_STICK_Y:-1' },
-        24: { 'value': '1' },
-        25: { 'value': '2' },
-        26: { 'value': '3' },
-        27: { 'value': 'add' },
-        28: { 'value': 'space' },
-        29: { 'value': 'subtract' }
-    }, 1: {}, 2: {}, 3: {}
-};
-</script>
-<script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script>
-</body></html>`;
+        iframe.src = 'n64-player.html?rom=' + encodeURIComponent(blobUrl) + '&name=' + encodeURIComponent(gameNameClean);
 
         ejsContainer.appendChild(iframe);
 
