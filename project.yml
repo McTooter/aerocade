@@ -4,6 +4,7 @@ options:
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
+  objectVersion: 56
 
 targets:
   Melodix:
