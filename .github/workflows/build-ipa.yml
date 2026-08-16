@@ -1,0 +1,53 @@
+name: Build IPA
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'MusicApp/**'
+      - 'project.yml'
+
+jobs:
+  build-ipa:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build app (unsigned)
+        run: |
+          xcodebuild \
+            -project Melodix.xcodeproj \
+            -scheme Melodix \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            build
+
+      - name: Package IPA
+        run: |
+          APP_PATH="build/Build/Products/Release-iphoneos/Melodix.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "::error::App bundle not found at $APP_PATH"
+            ls -R build/Build/Products | head -50
+            exit 1
+          fi
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          zip -r -y Melodix-unsigned.ipa Payload/
+          echo "app_size=$(du -sh Melodix-unsigned.ipa | cut -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Melodix-unsigned-ipa
+          path: Melodix-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14

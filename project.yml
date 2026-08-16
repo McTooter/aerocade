@@ -1,0 +1,69 @@
+name: Melodix
+options:
+  bundleIdPrefix: com.melodix
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+
+targets:
+  Melodix:
+    type: application
+    platform: iOS
+    sources:
+      - path: MusicApp
+        excludes:
+          - "Resources/Info.plist"
+          - "README.md"
+    info:
+      path: MusicApp/Resources/Info.plist
+      properties:
+        UILaunchScreen: {}
+        UIBackgroundModes:
+          - audio
+          - fetch
+          - remote-notification
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        NSFaceIDUsageDescription: "Melodix uses Face ID to securely sign you in."
+        NSPhotoLibraryUsageDescription: "Melodix needs access to your photo library to set profile pictures."
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        CFBundleDisplayName: "Melodix"
+        LSRequiresIPhoneOS: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_NAME: Melodix
+        PRODUCT_BUNDLE_IDENTIFIER: com.melodix.app
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: false
+        INFOPLIST_FILE: MusicApp/Resources/Info.plist
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+        ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: false
+
+  MusicAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: MusicAppTests
+    dependencies:
+      - target: Melodix
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.melodix.tests
+        SWIFT_VERSION: "5.9"
+
+schemes:
+  Melodix:
+    build:
+      targets:
+        Melodix: all
+    run:
+      config: Debug
+    archive:
+      config: Release

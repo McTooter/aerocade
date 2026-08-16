@@ -1,0 +1,29 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.moved-aside
+*.xcuserstate
+!default.pbxuser
+!default.perspectivev3
+
+# XcodeGen generated project
+Melodix.xcodeproj/
+
+# IPA outputs
+*.ipa
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# macOS
+.DS_Store
+
+# Secrets
+*.p12
+*.mobileprovision
+APIKeys.swift
