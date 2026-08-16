@@ -1,7 +1,7 @@
 ﻿import Foundation
 import CryptoKit
 
-struct YouTubeMusicProvider: MusicService {
+final class YouTubeMusicProvider: MusicService, @unchecked Sendable {
     let providerType: MusicProviderType = .youtubeMusic
     let displayName: String = "YouTube Music"
     let iconName: String = "music.note.list"
@@ -47,19 +47,19 @@ struct YouTubeMusicProvider: MusicService {
     func getAlbum(id: String) async throws -> Album {
         let body = YTMGetAlbumRequest(browseId: id)
         let response: YTMGetAlbumResponse = try await performRequest(endpoint: "browse", body: body)
-        return parseAlbum(response)
+        return parseAlbum(response.album)
     }
     
     func getArtist(id: String) async throws -> Artist {
         let body = YTMGetArtistRequest(browseId: id)
         let response: YTMGetArtistResponse = try await performRequest(endpoint: "browse", body: body)
-        return parseArtist(response)
+        return parseArtist(response.artist)
     }
     
     func getPlaylist(id: String) async throws -> ProviderPlaylist {
         let body = YTMGetPlaylistRequest(playlistId: id)
         let response: YTMGetPlaylistResponse = try await performRequest(endpoint: "browse", body: body)
-        return parsePlaylist(response)
+        return parsePlaylist(response.playlist)
     }
     
     func getUserPlaylists() async throws -> [ProviderPlaylist] {
@@ -219,7 +219,7 @@ struct YouTubeMusicProvider: MusicService {
     }
     
     private func parsePlaylist(_ ytmPlaylist: YTMPlaylist) -> ProviderPlaylist {
-        Playlist(
+        ProviderPlaylist(
             id: ytmPlaylist.playlistId,
             name: ytmPlaylist.title,
             description: ytmPlaylist.description,

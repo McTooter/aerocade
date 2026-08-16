@@ -1,7 +1,7 @@
 ﻿import Foundation
 import CryptoKit
 
-struct TidalProvider: MusicService {
+final class TidalProvider: MusicService, @unchecked Sendable {
     let providerType: MusicProviderType = .tidal
     let displayName: String = "Tidal"
     let iconName: String = "water.waves"
@@ -261,7 +261,7 @@ struct TidalProvider: MusicService {
     }
     
     private func parsePlaylist(_ tPlaylist: TidalPlaylist) -> ProviderPlaylist {
-        Playlist(
+        ProviderPlaylist(
             id: String(tPlaylist.id),
             name: tPlaylist.title,
             description: tPlaylist.description,

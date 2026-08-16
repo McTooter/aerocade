@@ -1,7 +1,7 @@
 ﻿import Foundation
 import CryptoKit
 
-struct CustomProvider: MusicService {
+final class CustomProvider: MusicService, @unchecked Sendable {
     let providerType: MusicProviderType = .custom
     let displayName: String = "Custom"
     let iconName: String = "gear"
@@ -150,19 +150,19 @@ struct CustomProvider: MusicService {
         case .playlist(let playlist):
             body = ["type": "playlist", "id": playlist.providerID]
         }
-        _ = try await performPOST(endpoint: "/me/library", body: body)
+        try await performPOST(endpoint: "/me/library", body: body)
     }
     
     func removeFromLibrary(_ item: LibraryItem) async throws {
         switch item {
         case .track(let track):
-            _ = try await performDELETE(endpoint: "/me/library/tracks/\(track.providerID)")
+            try await performDELETE(endpoint: "/me/library/tracks/\(track.providerID)")
         case .album(let album):
-            _ = try await performDELETE(endpoint: "/me/library/albums/\(album.providerID)")
+            try await performDELETE(endpoint: "/me/library/albums/\(album.providerID)")
         case .artist(let artist):
-            _ = try await performDELETE(endpoint: "/me/library/artists/\(artist.providerID)")
+            try await performDELETE(endpoint: "/me/library/artists/\(artist.providerID)")
         case .playlist(let playlist):
-            _ = try await performDELETE(endpoint: "/me/library/playlists/\(playlist.providerID)")
+            try await performDELETE(endpoint: "/me/library/playlists/\(playlist.providerID)")
         }
     }
     
@@ -172,18 +172,18 @@ struct CustomProvider: MusicService {
             "description": description ?? "",
             "trackIds": tracks.map { $0.providerID }
         ]
-        let response: CustomPlaylistResponse = try await performPOST(endpoint: "/me/playlists", body: body)
+        let response: CustomPlaylistResponse = try await performRequest(endpoint: "/me/playlists", body: body)
         return parsePlaylist(response.playlist)
     }
     
     func addTracksToPlaylist(_ tracks: [Track], playlistId: String) async throws {
         let body = ["trackIds": tracks.map { $0.providerID }]
-        _ = try await performPOST(endpoint: "/playlists/\(playlistId)/tracks", body: body)
+        try await performPOST(endpoint: "/playlists/\(playlistId)/tracks", body: body)
     }
     
     func removeTracksFromPlaylist(_ tracks: [Track], playlistId: String) async throws {
         let body = ["trackIds": tracks.map { $0.providerID }]
-        _ = try await performPOST(endpoint: "/playlists/\(playlistId)/tracks/remove", body: body)
+        try await performPOST(endpoint: "/playlists/\(playlistId)/tracks/remove", body: body)
     }
     
     private func performRequest<T: Decodable>(endpoint: String, body: [String: Any], auth: Bool = true) async throws -> T {
@@ -241,28 +241,42 @@ struct CustomProvider: MusicService {
         return try JSONDecoder().decode(T.self, from: data)
     }
     
-    private func performPOST<T: Decodable>(endpoint: String, body: [String: Any]) async throws -> T {
-        try await performRequest(endpoint: endpoint, body: body)
+    private func performPOST(endpoint: String, body: [String: Any]) async throws {
+        var request = URLRequest(url: URL(string: "\(baseURL)\(endpoint)")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        if let token = accessToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        try await validateResponse(of: request)
     }
     
-    private func performDELETE<T: Decodable>(endpoint: String) async throws -> T {
+    private func performDELETE(endpoint: String) async throws {
         var request = URLRequest(url: URL(string: "\(baseURL)\(endpoint)")!)
         request.httpMethod = "DELETE"
         if let token = accessToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
+        try await validateResponse(of: request)
+    }
+    
+    private func validateResponse(of request: URLRequest) async throws {
+        var request = request
+        let (_, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ProviderError.invalidResponse
         }
-        
+        if httpResponse.statusCode == 401 {
+            _ = try await refreshToken()
+            if let token = accessToken {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            }
+            return try await validateResponse(of: request)
+        }
         guard (200...299).contains(httpResponse.statusCode) else {
             throw ProviderError.httpError(httpResponse.statusCode)
         }
-        
-        return try JSONDecoder().decode(T.self, from: data)
     }
     
     private func parseTrack(_ cTrack: CustomTrack) -> Track {
@@ -308,7 +322,7 @@ struct CustomProvider: MusicService {
     }
     
     private func parsePlaylist(_ cPlaylist: CustomPlaylist) -> ProviderPlaylist {
-        Playlist(
+        ProviderPlaylist(
             id: cPlaylist.id,
             name: cPlaylist.name,
             description: cPlaylist.description,

@@ -5,7 +5,7 @@ import UIKit
 import CryptoKit
 
 @MainActor
-final class DatabaseManager {
+final class DatabaseManager: ObservableObject {
     static let shared = DatabaseManager()
     
     private var modelContext: ModelContext?
@@ -61,7 +61,7 @@ final class DatabaseManager {
         profile.preferences = preferences
         
         for provider in MusicProviderType.allCases where provider != .local {
-            let credentials = ProviderCredentials(provider: provider)
+            let credentials = ProviderCredentials(provider: MusicProvider(rawValue: provider.rawValue) ?? .custom)
             credentials.profile = profile
             profile.providerCredentials.append(credentials)
         }
@@ -118,7 +118,7 @@ final class DatabaseManager {
         profile.preferences = preferences
         
         for provider in MusicProviderType.allCases where provider != .local {
-            let credentials = ProviderCredentials(provider: provider)
+            let credentials = ProviderCredentials(provider: MusicProvider(rawValue: provider.rawValue) ?? .custom)
             credentials.profile = profile
             profile.providerCredentials.append(credentials)
         }
@@ -166,7 +166,7 @@ final class DatabaseManager {
     // MARK: - Playlists
     
     func createPlaylist(name: String, description: String?, for profile: UserProfile) throws -> Playlist {
-        let playlist = Playlist(name: name, description: description)
+        let playlist = Playlist(name: name, blurb: description)
         playlist.profile = profile
         insert(playlist)
         save()
@@ -176,7 +176,7 @@ final class DatabaseManager {
     func playlists(for profile: UserProfile) throws -> [Playlist] {
         guard let modelContext = modelContext else { return [] }
         let descriptor = FetchDescriptor<Playlist>(
-            predicate: #Predicate { $0.profile == profile },
+            predicate: #Predicate { $0.profile?.persistentModelID == profile.persistentModelID },
             sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
         )
         return try modelContext.fetch(descriptor)
@@ -213,7 +213,7 @@ final class DatabaseManager {
     func playHistory(for profile: UserProfile, limit: Int = 50) throws -> [PlayHistory] {
         guard let modelContext = modelContext else { return [] }
         let descriptor = FetchDescriptor<PlayHistory>(
-            predicate: #Predicate { $0.profile == profile },
+            predicate: #Predicate { $0.profile?.persistentModelID == profile.persistentModelID },
             sortBy: [SortDescriptor(\.playedAt, order: .reverse)]
         )
         var history = try modelContext.fetch(descriptor)
@@ -239,7 +239,7 @@ final class DatabaseManager {
     func eqPresets(for profile: UserProfile) throws -> [EQPreset] {
         guard let modelContext = modelContext else { return [] }
         let descriptor = FetchDescriptor<EQPreset>(
-            predicate: #Predicate { $0.profile == profile },
+            predicate: #Predicate { $0.profile?.persistentModelID == profile.persistentModelID },
             sortBy: [SortDescriptor(\.name)]
         )
         return try modelContext.fetch(descriptor)
@@ -256,7 +256,7 @@ final class DatabaseManager {
     func themes(for profile: UserProfile) throws -> [ThemeConfiguration] {
         guard let modelContext = modelContext else { return [] }
         let descriptor = FetchDescriptor<ThemeConfiguration>(
-            predicate: #Predicate { $0.profile == profile },
+            predicate: #Predicate { $0.profile?.persistentModelID == profile.persistentModelID },
             sortBy: [SortDescriptor(\.name)]
         )
         return try modelContext.fetch(descriptor)
@@ -285,7 +285,7 @@ final class DatabaseManager {
     func downloadedTracks(for profile: UserProfile) throws -> [DownloadedTrack] {
         guard let modelContext = modelContext else { return [] }
         let descriptor = FetchDescriptor<DownloadedTrack>(
-            predicate: #Predicate { $0.profile == profile },
+            predicate: #Predicate { $0.profile?.persistentModelID == profile.persistentModelID },
             sortBy: [SortDescriptor(\.downloadDate, order: .reverse)]
         )
         return try modelContext.fetch(descriptor)

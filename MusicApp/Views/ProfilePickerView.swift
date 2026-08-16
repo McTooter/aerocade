@@ -83,7 +83,7 @@ struct ProfilePickerView: View {
         }
     }
     
-    private func selectProfile(_ profile: UserProfile) {
+    @MainActor private func selectProfile(_ profile: UserProfile) {
         DatabaseManager.shared.setActiveProfile(profile)
     }
 }
@@ -217,7 +217,7 @@ struct AddProfileView: View {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 44))], spacing: 12) {
                         ForEach(colorOptions, id: \.self) { color in
                             Circle()
-                                .fill(avatarColor(color))
+                                .fill(AvatarColorPalette.color(color))
                                 .frame(width: 40, height: 40)
                                 .overlay(
                                     Circle()

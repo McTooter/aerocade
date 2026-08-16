@@ -119,28 +119,31 @@ struct SettingsView: View {
     
     private var audioSection: some View {
         Section {
-            if let prefs = DatabaseManager.shared.activeProfile?.preferences {
-                Picker("Audio Quality", selection: Binding(
-                    get: { prefs.audioQuality },
-                    set: { value in
-                        prefs.audioQuality = value
-                        try? DatabaseManager.shared.saveContext()
-                    }
-                )) {
-                    ForEach(AudioQuality.allCases, id: \.self) { quality in
-                        Text(quality.displayName).tag(quality)
-                    }
-                }
-            } else {
-                Picker("Audio Quality", selection: .constant(.high)) {
-                    ForEach(AudioQuality.allCases, id: \.self) { quality in
-                        Text(quality.displayName).tag(quality)
-                    }
-                }
-            }
+            audioQualityPicker
         } header: {
             Text("Audio")
         }
+    }
+    
+    private var audioQualityPicker: some View {
+        Picker("Audio Quality", selection: audioQualityBinding) {
+            ForEach(AudioQuality.allCases, id: \.self) { quality in
+                Text(quality.displayName).tag(quality)
+            }
+        }
+    }
+    
+    private var audioQualityBinding: Binding<AudioQuality> {
+        if let prefs = DatabaseManager.shared.activeProfile?.preferences {
+            return Binding(
+                get: { prefs.audioQuality },
+                set: { value in
+                    prefs.audioQuality = value
+                    try? DatabaseManager.shared.saveContext()
+                }
+            )
+        }
+        return .constant(.high)
     }
     
     private var playbackSection: some View {
@@ -349,12 +352,14 @@ struct SecuritySettingsView: View {
 
 struct DownloadsView: View {
     @State private var downloadedTracks: [DownloadedTrack] = []
+    @State private var wifiOnly = true
+    @State private var downloadQuality: AudioQuality = .high
     
     var body: some View {
         List {
             Section {
-                Toggle("Download over Wi-Fi only", isOn: .constant(true))
-                Picker("Download Quality", selection: .constant(.high)) {
+                Toggle("Download over Wi-Fi only", isOn: $wifiOnly)
+                Picker("Download Quality", selection: $downloadQuality) {
                     ForEach(AudioQuality.allCases, id: \.self) { quality in
                         Text(quality.displayName).tag(quality)
                     }

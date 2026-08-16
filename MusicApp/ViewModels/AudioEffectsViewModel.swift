@@ -18,7 +18,7 @@ final class AudioEffectsViewModel: ObservableObject {
     @Published var delayFeedback: Float = 30
     @Published var delayWetDryMix: Float = 30
     @Published var isDistortionEnabled = false
-    @Published var distortionPreset: AVAudioUnitDistortionPreset = .multiStageDistortion
+    @Published var distortionPreset: AVAudioUnitDistortionPreset = .multiDistortedFunk
     @Published var distortionWetDryMix: Float = 30
     @Published var isReversed = false
     @Published var playbackSpeed: Float = 1.0
@@ -47,8 +47,8 @@ final class AudioEffectsViewModel: ObservableObject {
         (.largeChamber, "Large Chamber"),
         (.cathedral, "Cathedral"),
         (.plate, "Plate"),
-        (.lowPassFilter, "Low Pass"),
-        (.lowpass21, "Lowpass 21")
+        (.mediumHall2, "Medium Hall 2"),
+        (.largeHall2, "Large Hall 2")
     ]
     
     let availableDistortionPresets: [(AVAudioUnitDistortionPreset, String)] = [

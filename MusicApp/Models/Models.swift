@@ -76,7 +76,7 @@ final class UserPreferences {
 final class Playlist {
     var id: UUID
     var name: String
-    var description: String?
+    var blurb: String?
     var artworkData: Data?
     var isSmartPlaylist: Bool
     var smartRules: [SmartPlaylistRule]
@@ -85,10 +85,10 @@ final class Playlist {
     var updatedAt: Date
     var profile: UserProfile?
     
-    init(name: String, description: String? = nil, isSmartPlaylist: Bool = false) {
+    init(name: String, blurb: String? = nil, isSmartPlaylist: Bool = false) {
         self.id = UUID()
         self.name = name
-        self.description = description
+        self.blurb = blurb
         self.isSmartPlaylist = isSmartPlaylist
         self.smartRules = []
         self.tracks = []

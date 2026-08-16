@@ -278,9 +278,9 @@ final class PlaybackViewModel: ObservableObject {
             return .success
         }
         
-        commandCenter.changeShuffleModeCommand.addTarget { [weak self] event in
-            guard let event = event as? MPChangeShuffleModeCommandEvent else { return .commandFailed }
-            self?.setShuffle(event.shuffleMode == .shuffle)
+        commandCenter.changeShuffleModeCommand.addTarget { [weak self] _ in
+            guard let self = self else { return .commandFailed }
+            self.setShuffle(!self.isShuffled)
             return .success
         }
         
@@ -289,7 +289,7 @@ final class PlaybackViewModel: ObservableObject {
             switch event.repeatType {
             case .all: self?.setRepeatMode(.all)
             case .one: self?.setRepeatMode(.one)
-            case .none: self?.setRepeatMode(.off)
+            case .off: self?.setRepeatMode(.off)
             @unknown default: self?.setRepeatMode(.off)
             }
             return .success

@@ -38,6 +38,26 @@ enum MusicProviderType: String, CaseIterable, Sendable {
     case tidal = "tidal"
     case custom = "custom"
     case local = "local"
+    
+    var displayName: String {
+        switch self {
+        case .youtubeMusic: return "YouTube Music"
+        case .qobuz: return "Qobuz"
+        case .tidal: return "Tidal"
+        case .custom: return "Custom"
+        case .local: return "Local Files"
+        }
+    }
+    
+    var iconName: String {
+        switch self {
+        case .youtubeMusic: return "music.note.list"
+        case .qobuz: return "waveform"
+        case .tidal: return "water.waves"
+        case .custom: return "gear"
+        case .local: return "folder"
+        }
+    }
 }
 
 struct ProviderAuthResult: Sendable {

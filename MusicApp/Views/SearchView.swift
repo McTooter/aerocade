@@ -79,24 +79,28 @@ struct SearchView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(allProviders, id: \.self) { provider in
-                    Button {
-                        selectedProvider = provider
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: provider.iconName)
-                            Text(provider.displayName)
-                        }
-                        .font(.caption.weight(selectedProvider == provider ? .bold : .regular))
-                        .foregroundColor(selectedProvider == provider ? themeManager.textPrimaryColor : themeManager.textSecondaryColor)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(selectedProvider == provider ? themeManager.accentColor : themeManager.surfaceColor)
-                        .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
+                    providerChip(provider)
                 }
             }
         }
+    }
+    
+    private func providerChip(_ provider: MusicProviderType) -> some View {
+        Button {
+            selectedProvider = provider
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: provider.iconName)
+                Text(provider.displayName)
+            }
+            .font(.caption.weight(selectedProvider == provider ? .bold : .regular))
+            .foregroundColor(selectedProvider == provider ? themeManager.textPrimaryColor : themeManager.textSecondaryColor)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(selectedProvider == provider ? themeManager.accentColor : themeManager.surfaceColor)
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
     
     private func resultList(_ results: SearchResults) -> some View {
@@ -228,7 +232,7 @@ struct SearchView: View {
         .frame(width: 100)
     }
     
-    private func playlistRow(_ playlist: Playlist) -> some View {
+    private func playlistRow(_ playlist: ProviderPlaylist) -> some View {
         HStack(spacing: 12) {
             AsyncImage(url: URL(string: playlist.artworkURL ?? "")) { image in
                 image

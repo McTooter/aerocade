@@ -447,7 +447,7 @@ struct EQBandView: View {
     
     private func bar(index: Int) -> some View {
         let normalized = (bands[index].gain + 12) / 24
-        let height = max(6, normalized * 120)
+        let height = CGFloat(max(6, normalized * 120))
         
         return RoundedRectangle(cornerRadius: 3)
             .fill(accentColor)

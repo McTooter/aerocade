@@ -55,7 +55,7 @@ final class AudioEngine: ObservableObject {
         reverbNode.wetDryMix = 0
         timePitchNode.rate = 1.0
         timePitchNode.pitch = 0
-        distortionNode.loadFactoryPreset(.multiStageDistortion)
+        distortionNode.loadFactoryPreset(.multiDistortedFunk)
         distortionNode.wetDryMix = 0
         delayNode.delayTime = 0.5
         delayNode.feedback = 30
@@ -168,7 +168,9 @@ final class AudioEngine: ObservableObject {
             guard let sourceData = buffer.floatChannelData?[channel],
                   let destData = reversalBuffer.floatChannelData?[0] else { continue }
             
-            vDSP_vrvrs(sourceData, 1, destData, 1, vDSP_Length(frameLength))
+            for i in 0..<frameLength {
+                destData[i] = sourceData[frameLength - 1 - i]
+            }
         }
         
         reversalBuffer.frameLength = buffer.frameLength
@@ -293,8 +295,8 @@ final class AudioEngine: ObservableObject {
         var imagp = [Float](repeating: 0, count: fftSize/2)
         var output = DSPSplitComplex(realp: &realp, imagp: &imagp)
         
-        let window = [Float](repeating: 0, count: fftSize)
-        vDSP_hann_window(&window, vDSP_Length(fftSize), vDSP_HANN_NORM)
+        var window = [Float](repeating: 0, count: fftSize)
+        vDSP_hann_window(&window, vDSP_Length(fftSize), Int32(vDSP_HANN_NORM))
         
         var windowed = [Float](repeating: 0, count: fftSize)
         vDSP_vmul(channelData, 1, window, 1, &windowed, 1, vDSP_Length(fftSize))

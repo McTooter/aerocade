@@ -1,7 +1,7 @@
 ﻿import Foundation
 import CryptoKit
 
-struct QobuzProvider: MusicService {
+final class QobuzProvider: MusicService, @unchecked Sendable {
     let providerType: MusicProviderType = .qobuz
     let displayName: String = "Qobuz"
     let iconName: String = "waveform"
@@ -234,7 +234,7 @@ struct QobuzProvider: MusicService {
     }
     
     private func parsePlaylist(_ qPlaylist: QobuzPlaylist) -> ProviderPlaylist {
-        Playlist(
+        ProviderPlaylist(
             id: String(qPlaylist.id),
             name: qPlaylist.name,
             description: qPlaylist.description,
