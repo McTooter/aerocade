@@ -176,10 +176,9 @@ final class DatabaseManager: ObservableObject {
     func playlists(for profile: UserProfile) throws -> [Playlist] {
         guard let modelContext = modelContext else { return [] }
         let descriptor = FetchDescriptor<Playlist>(
-            predicate: #Predicate { $0.profile?.persistentModelID == profile.persistentModelID },
             sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
         )
-        return try modelContext.fetch(descriptor)
+        return try modelContext.fetch(descriptor).filter { $0.profile == profile }
     }
     
     func addTrack(_ track: Track, to playlist: Playlist) {
@@ -213,10 +212,9 @@ final class DatabaseManager: ObservableObject {
     func playHistory(for profile: UserProfile, limit: Int = 50) throws -> [PlayHistory] {
         guard let modelContext = modelContext else { return [] }
         let descriptor = FetchDescriptor<PlayHistory>(
-            predicate: #Predicate { $0.profile?.persistentModelID == profile.persistentModelID },
             sortBy: [SortDescriptor(\.playedAt, order: .reverse)]
         )
-        var history = try modelContext.fetch(descriptor)
+        var history = try modelContext.fetch(descriptor).filter { $0.profile == profile }
         if history.count > limit {
             history = Array(history.prefix(limit))
         }
@@ -239,10 +237,9 @@ final class DatabaseManager: ObservableObject {
     func eqPresets(for profile: UserProfile) throws -> [EQPreset] {
         guard let modelContext = modelContext else { return [] }
         let descriptor = FetchDescriptor<EQPreset>(
-            predicate: #Predicate { $0.profile?.persistentModelID == profile.persistentModelID },
             sortBy: [SortDescriptor(\.name)]
         )
-        return try modelContext.fetch(descriptor)
+        return try modelContext.fetch(descriptor).filter { $0.profile == profile }
     }
     
     // MARK: - Themes
@@ -256,10 +253,9 @@ final class DatabaseManager: ObservableObject {
     func themes(for profile: UserProfile) throws -> [ThemeConfiguration] {
         guard let modelContext = modelContext else { return [] }
         let descriptor = FetchDescriptor<ThemeConfiguration>(
-            predicate: #Predicate { $0.profile?.persistentModelID == profile.persistentModelID },
             sortBy: [SortDescriptor(\.name)]
         )
-        return try modelContext.fetch(descriptor)
+        return try modelContext.fetch(descriptor).filter { $0.profile == profile }
     }
     
     func deleteTheme(_ theme: ThemeConfiguration) {
@@ -285,10 +281,9 @@ final class DatabaseManager: ObservableObject {
     func downloadedTracks(for profile: UserProfile) throws -> [DownloadedTrack] {
         guard let modelContext = modelContext else { return [] }
         let descriptor = FetchDescriptor<DownloadedTrack>(
-            predicate: #Predicate { $0.profile?.persistentModelID == profile.persistentModelID },
             sortBy: [SortDescriptor(\.downloadDate, order: .reverse)]
         )
-        return try modelContext.fetch(descriptor)
+        return try modelContext.fetch(descriptor).filter { $0.profile == profile }
     }
     
     // MARK: - Private Helpers
